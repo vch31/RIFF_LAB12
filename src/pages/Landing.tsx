@@ -143,9 +143,9 @@ export default function Landing() {
   ];
   return (
     <main className="rl-body bg-rl-bg text-rl-ink overflow-x-hidden">
-      <header className={"fixed top-0 inset-x-0 z-50 backdrop-blur bg-rl-bg/80 border-b max-h-14 md:max-h-none " + (g ? "border-rl-line" : "border-rl-red/30")}>
-        <div className="max-w-6xl mx-auto px-4 md:px-6 py-2 md:h-14 flex items-center justify-between">
-          <span className="rl-display text-base md:text-lg tracking-widest whitespace-nowrap">
+      <header className={"fixed top-0 inset-x-0 z-50 backdrop-blur bg-rl-bg/80 border-b h-14 md:h-16 overflow-hidden " + (g ? "border-rl-line" : "border-rl-red/30")}>
+        <div className="max-w-6xl mx-auto px-4 md:px-8 h-full flex items-center justify-between">
+          <span className="rl-display text-base md:text-lg tracking-widest whitespace-nowrap flex-shrink-0">
             RIFF<span className="text-rl-orange">LAB12</span>{" "}
             <span className="text-rl-muted text-base">×</span> DRUM<span className="text-rl-red">LAB12</span>
           </span>
@@ -156,7 +156,7 @@ export default function Landing() {
               </a>
             ))}
           </nav>
-          <CTA href="#contact" tone={tone} className="py-1.5 px-2.5 md:py-2 md:px-4 text-xs md:text-sm font-semibold">
+          <CTA href="#contact" tone={tone} className="max-h-9 py-1 px-3 text-[11px] md:text-xs font-bold leading-tight uppercase rounded-full flex-shrink-0">
             Пробное занятие
           </CTA>
         </div>
@@ -180,7 +180,7 @@ export default function Landing() {
         />
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <Kicker tone={tone}>Гродно · Студия гитары и ударных</Kicker>
-          <h1 className="rl-display text-2xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight tracking-normal font-semibold mb-6">
+          <h1 className="rl-display text-2xl sm:text-4xl md:text-6xl leading-tight tracking-tight font-black mb-6">
             Куда сбежать в конце дня,
             <br />
             чтобы найти себя?
