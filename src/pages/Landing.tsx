@@ -185,9 +185,13 @@ export default function Landing() {
             <br />
             чтобы найти себя?
           </h1>
-          <p className="text-rl-muted text-lg mb-8 max-w-xl mx-auto">
+          <p className="text-rl-muted text-lg mb-4 max-w-xl mx-auto">
             Индивидуальные занятия для взрослых и детей от 10 лет, на топовых инструментах — свои
-            везти не нужно. Выбери, с чего начать:
+            везти не нужно.
+          </p>
+          <p className="rl-mono text-sm mt-8 mb-4 tracking-widest">
+            <span className="text-rl-orange">Выбери,</span>{" "}
+            <span className="text-rl-red">с чего начать</span>
           </p>
           <Picker mode={mode} setMode={setMode} />
           <div className="flex gap-4 justify-center flex-wrap">
