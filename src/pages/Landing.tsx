@@ -32,8 +32,9 @@ function Reveal({ children, className = "" }: { children: ReactNode; className?:
   );
 }
 
-function Kicker({ children }: { children: ReactNode }) {
-  return <p className="rl-mono text-xs text-rl-orange mb-3">{children}</p>;
+function Kicker({ children, tone }: { children: ReactNode; tone?: "orange" | "red" }) {
+  const c = tone === "red" ? "text-rl-red" : "text-rl-orange";
+  return <p className={"rl-mono text-xs " + c + " mb-3"}>{children}</p>;
 }
 
 function CTA({
@@ -42,22 +43,25 @@ function CTA({
   ghost = false,
   ext = false,
   tone = "orange",
+  className = "",
 }: {
   children: ReactNode;
   href: string;
   ghost?: boolean;
   ext?: boolean;
   tone?: "orange" | "red";
+  className?: string;
 }) {
   const solid =
     tone === "red" ? "bg-rl-red text-rl-bg hover:brightness-110" : "bg-rl-orange text-rl-bg hover:brightness-110";
-  const g = "border border-rl-line text-rl-ink hover:border-rl-orange";
+  const ghostHover = tone === "red" ? "hover:border-rl-red" : "hover:border-rl-orange";
+  const g = "border border-rl-line text-rl-ink " + ghostHover;
   return (
     <a
       href={href}
       target={ext ? "_blank" : undefined}
       rel={ext ? "noopener noreferrer" : undefined}
-      className={"rl-mono text-xs px-6 py-3 rounded-full inline-block transition hover:scale-105 " + (ghost ? g : solid)}
+      className={"rl-mono text-xs px-6 py-3 rounded-full inline-block transition hover:scale-105 " + (ghost ? g : solid) + " " + className}
     >
       {children}
     </a>
@@ -139,20 +143,20 @@ export default function Landing() {
   ];
   return (
     <main className="rl-body bg-rl-bg text-rl-ink overflow-x-hidden">
-      <header className="fixed top-0 inset-x-0 z-50 backdrop-blur bg-rl-bg/80 border-b border-rl-line">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <span className="rl-display text-lg md:text-2xl tracking-widest whitespace-nowrap">
+      <header className={"fixed top-0 inset-x-0 z-50 backdrop-blur bg-rl-bg/80 border-b " + (g ? "border-rl-line" : "border-rl-red/30")}>
+        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+          <span className="rl-display text-base md:text-lg tracking-widest whitespace-nowrap">
             RIFF<span className="text-rl-orange">LAB12</span>{" "}
             <span className="text-rl-muted text-base">×</span> DRUM<span className="text-rl-red">LAB12</span>
           </span>
-          <nav className="hidden md:flex gap-8 rl-mono text-xs text-rl-muted">
+          <nav className="hidden md:flex gap-6 rl-mono text-xs text-rl-muted">
             {NAV.map(([h, l]) => (
-              <a key={l} href={h} className="hover:text-rl-ink">
+              <a key={l} href={h} className={"hover:" + (g ? "text-rl-orange" : "text-rl-red")}>
                 {l}
               </a>
             ))}
           </nav>
-          <CTA href="#contact" tone={tone}>
+          <CTA href="#contact" tone={tone} className="py-2 px-4 text-xs md:text-sm font-semibold">
             Пробное занятие
           </CTA>
         </div>
@@ -161,22 +165,22 @@ export default function Landing() {
       <section className="relative pt-40 pb-24 px-6 overflow-hidden min-h-[85vh] flex items-center">
         <video
           className="absolute inset-0 w-full h-full object-cover opacity-45"
-          src="/media/hero.mp4"
-          poster="/media/hero-poster.png"
+          src={`${import.meta.env.BASE_URL}media/hero.mp4`}
+          poster={`${import.meta.env.BASE_URL}media/hero-poster.png`}
           autoPlay
           muted
           loop
           playsInline
         />
         <div className="absolute inset-0 bg-gradient-to-b from-rl-bg/40 via-rl-bg/70 to-rl-bg" />
-        <div className="rl-ring w-[520px] h-[520px] -top-40 -right-40" />
+        <div className="rl-ring w-[520px] h-[520px] -top-40 -right-40" style={{ borderColor: g ? "var(--color-rl-orange)" : "var(--color-rl-red)" }} />
         <div
           className="rl-ring w-[320px] h-[320px] top-20 -right-10"
           style={{ borderColor: "var(--color-rl-red)" }}
         />
         <div className="max-w-3xl mx-auto text-center relative z-10">
-          <Kicker>Гродно · Студия гитары и ударных</Kicker>
-          <h1 className="rl-display text-5xl md:text-7xl leading-[0.95] mb-6">
+          <Kicker tone={tone}>Гродно · Студия гитары и ударных</Kicker>
+          <h1 className="rl-display text-3xl md:text-5xl lg:text-6xl leading-tight tracking-normal font-semibold mb-6">
             Куда сбежать в конце дня,
             <br />
             чтобы найти себя?
@@ -206,7 +210,7 @@ export default function Landing() {
             ["0 багажа", "Инструмент и комбик — наши"],
           ].map(([a, b]) => (
             <Reveal key={a}>
-              <div className="rl-display text-3xl text-rl-orange">{a}</div>
+              <div className={"rl-display text-3xl " + (g ? "text-rl-orange" : "text-rl-red")}>{a}</div>
               <div className="text-sm text-rl-muted mt-1">{b}</div>
             </Reveal>
           ))}
@@ -296,7 +300,7 @@ export default function Landing() {
 
       <section className="bg-rl-panel border-y border-rl-line py-24 px-6">
         <Reveal className="max-w-3xl mx-auto">
-          <Kicker>Что вы получите</Kicker>
+          <Kicker tone={tone}>Что вы получите</Kicker>
           <h2 className="rl-display text-4xl mb-10">Шесть причин начать</h2>
           <ol className="space-y-5">
             {[
@@ -308,7 +312,7 @@ export default function Landing() {
               "Переключаться от рутины после работы",
             ].map((t, i) => (
               <li key={t} className="flex gap-5 items-start">
-                <span className="rl-display text-3xl text-rl-orange w-10">
+                <span className={"rl-display text-3xl w-10 " + (g ? "text-rl-orange" : "text-rl-red")}>
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <span className="pt-1">{t}</span>
@@ -320,7 +324,7 @@ export default function Landing() {
 
       <section id="team" className="max-w-2xl mx-auto px-6 py-24">
         <Reveal>
-          <Kicker>Преподаватель</Kicker>
+          <Kicker tone={tone}>Преподаватель</Kicker>
           <h2 className="rl-display text-4xl mb-10">С кем вы будете заниматься</h2>
           {g ? (
             <div className="rounded-2xl border border-rl-line p-8">
@@ -345,7 +349,7 @@ export default function Landing() {
 
       <section id="pricing" className="bg-rl-panel border-y border-rl-line py-24 px-6">
         <Reveal className="max-w-md mx-auto">
-          <Kicker>Цены</Kicker>
+          <Kicker tone={tone}>Цены</Kicker>
           <h2 className="rl-display text-4xl mb-10">Абонемент на 1 месяц</h2>
           <div className={"rounded-2xl border p-8 " + (g ? "border-rl-orange" : "border-rl-red")}>
             <div className="rl-display text-2xl mb-4">{g ? "Guitar Lessons" : "Drum Lessons"}</div>
@@ -376,7 +380,7 @@ export default function Landing() {
 
       <section id="contact" className="max-w-4xl mx-auto px-6 py-24 text-center">
         <Reveal>
-          <Kicker>Гродно, Беларусь</Kicker>
+          <Kicker tone={tone}>Гродно, Беларусь</Kicker>
           <h2 className="rl-display text-4xl md:text-5xl mb-8">Записывайся на пробное занятие</h2>
           <div className="flex gap-4 justify-center flex-wrap mb-8">
             <CTA href={igUrl} ext tone={tone}>

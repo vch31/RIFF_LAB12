@@ -196,7 +196,6 @@
 /* Типографическая иерархия */
 h1, h2, h3 {
   font-family: 'Unbounded', sans-serif;
-  font-weight: 900;
   text-transform: uppercase;
   letter-spacing: -0.02em;
 }
@@ -207,7 +206,7 @@ body {
   line-height: 1.6;
 }
 
-.rl-display { font-family: 'Unbounded', sans-serif; font-weight: 900; text-transform: uppercase; letter-spacing: -0.02em; }
+.rl-display { font-family: 'Unbounded', sans-serif; text-transform: uppercase; letter-spacing: -0.02em; }
 .rl-mono { font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.85rem; }
 .rl-body { font-family: 'Inter', sans-serif; color: #a1a1aa; line-height: 1.6; }
 .rl-ring { position: absolute; border: 1px solid var(--color-rl-orange); border-radius: 9999px; opacity: 0.3; pointer-events:none; }
