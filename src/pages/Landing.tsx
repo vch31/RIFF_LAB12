@@ -143,8 +143,8 @@ export default function Landing() {
   ];
   return (
     <main className="rl-body bg-rl-bg text-rl-ink overflow-x-hidden">
-      <header className={"fixed top-0 inset-x-0 z-50 backdrop-blur bg-rl-bg/80 border-b " + (g ? "border-rl-line" : "border-rl-red/30")}>
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+      <header className={"fixed top-0 inset-x-0 z-50 backdrop-blur bg-rl-bg/80 border-b max-h-14 md:max-h-none " + (g ? "border-rl-line" : "border-rl-red/30")}>
+        <div className="max-w-6xl mx-auto px-4 md:px-6 py-2 md:h-14 flex items-center justify-between">
           <span className="rl-display text-base md:text-lg tracking-widest whitespace-nowrap">
             RIFF<span className="text-rl-orange">LAB12</span>{" "}
             <span className="text-rl-muted text-base">×</span> DRUM<span className="text-rl-red">LAB12</span>
@@ -156,7 +156,7 @@ export default function Landing() {
               </a>
             ))}
           </nav>
-          <CTA href="#contact" tone={tone} className="py-2 px-4 text-xs md:text-sm font-semibold">
+          <CTA href="#contact" tone={tone} className="py-1.5 px-2.5 md:py-2 md:px-4 text-xs md:text-sm font-semibold">
             Пробное занятие
           </CTA>
         </div>
@@ -180,7 +180,7 @@ export default function Landing() {
         />
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <Kicker tone={tone}>Гродно · Студия гитары и ударных</Kicker>
-          <h1 className="rl-display text-3xl md:text-5xl lg:text-6xl leading-tight tracking-normal font-semibold mb-6">
+          <h1 className="rl-display text-2xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight tracking-normal font-semibold mb-6">
             Куда сбежать в конце дня,
             <br />
             чтобы найти себя?
@@ -223,7 +223,7 @@ export default function Landing() {
             <div id="guitar" className="grid md:grid-cols-2 gap-12 items-center scroll-mt-24">
               <div>
                 <Kicker>Riff Lab12 · Гитара</Kicker>
-                <h2 className="rl-display text-4xl mb-4">Электро и акустика, с нуля</h2>
+                <h2 className="rl-display text-2xl sm:text-3xl md:text-4xl mb-4">Электро и акустика, с нуля</h2>
                 <p className="text-rl-muted mb-4">
                   Обучение — это удовольствие, а не усталость ещё до занятия. Приезжаешь в студию,
                   берёшь со стойки отстроенную гитару и подключаешься к комбику.
@@ -278,7 +278,7 @@ export default function Landing() {
                 <Kicker>
                   <span className="text-rl-red">Drum Lab12 · Ударные</span>
                 </Kicker>
-                <h2 className="rl-display text-4xl mb-4">Не просто бить в барабаны</h2>
+                <h2 className="rl-display text-2xl sm:text-3xl md:text-4xl mb-4">Не просто бить в барабаны</h2>
                 <p className="text-rl-muted mb-4">
                   Мечтаешь сесть за установку и задать свой ритм? Учим чувствовать музыку, а не
                   заучивать удары — с первого занятия.
@@ -301,7 +301,7 @@ export default function Landing() {
       <section className="bg-rl-panel border-y border-rl-line py-24 px-6">
         <Reveal className="max-w-3xl mx-auto">
           <Kicker tone={tone}>Что вы получите</Kicker>
-          <h2 className="rl-display text-4xl mb-10">Шесть причин начать</h2>
+          <h2 className="rl-display text-2xl sm:text-3xl md:text-4xl mb-10">Шесть причин начать</h2>
           <ol className="space-y-5">
             {[
               "Играть для себя и с друзьями",
@@ -325,7 +325,7 @@ export default function Landing() {
       <section id="team" className="max-w-2xl mx-auto px-6 py-24">
         <Reveal>
           <Kicker tone={tone}>Преподаватель</Kicker>
-          <h2 className="rl-display text-4xl mb-10">С кем вы будете заниматься</h2>
+          <h2 className="rl-display text-2xl sm:text-3xl md:text-4xl mb-10">С кем вы будете заниматься</h2>
           {g ? (
             <div className="rounded-2xl border border-rl-line p-8">
               <div className="rl-mono text-xs text-rl-orange mb-3">Гитара · Riff Lab12</div>
@@ -350,7 +350,7 @@ export default function Landing() {
       <section id="pricing" className="bg-rl-panel border-y border-rl-line py-24 px-6">
         <Reveal className="max-w-md mx-auto">
           <Kicker tone={tone}>Цены</Kicker>
-          <h2 className="rl-display text-4xl mb-10">Абонемент на 1 месяц</h2>
+          <h2 className="rl-display text-2xl sm:text-3xl md:text-4xl mb-10">Абонемент на 1 месяц</h2>
           <div className={"rounded-2xl border p-8 " + (g ? "border-rl-orange" : "border-rl-red")}>
             <div className="rl-display text-2xl mb-4">{g ? "Guitar Lessons" : "Drum Lessons"}</div>
             {(g
@@ -381,7 +381,7 @@ export default function Landing() {
       <section id="contact" className="max-w-4xl mx-auto px-6 py-24 text-center">
         <Reveal>
           <Kicker tone={tone}>Гродно, Беларусь</Kicker>
-          <h2 className="rl-display text-4xl md:text-5xl mb-8">Записывайся на пробное занятие</h2>
+          <h2 className="rl-display text-2xl sm:text-4xl md:text-5xl mb-8">Записывайся на пробное занятие</h2>
           <div className="flex gap-4 justify-center flex-wrap mb-8">
             <CTA href={igUrl} ext tone={tone}>
               Написать в директ
