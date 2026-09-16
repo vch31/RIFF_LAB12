@@ -7,6 +7,7 @@ import { defineConfig } from "vite";
 // source imports like `@/components/foo` resolve in both TypeScript and Vite.
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  base: './',
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
