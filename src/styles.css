@@ -3,6 +3,8 @@
  * q-button-*) always win over global element resets. */
 @layer reset, theme, base, components, utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@500;700&family=Unbounded:wght@700;900&display=swap');
+
 @import "tailwindcss" source(none);
 @source "../src";
 /* Local design-token shim (see src/sdk/quanta-shim.css) — the standalone
@@ -174,7 +176,6 @@
     min-height: 100vh;
     background-color: var(--hf-color-background-primary);
     color: var(--hf-color-text-primary);
-    font-family: var(--hf-type-family-secondary);
   }
 
   * {
@@ -182,19 +183,33 @@
   }
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap');
 @theme inline {
   --color-rl-bg: #0b0b0c;
   --color-rl-panel: #151210;
   --color-rl-ink: #f5f1ea;
-  --color-rl-muted: #a89e92;
+  --color-rl-muted: #a1a1aa;
   --color-rl-orange: #f5750f;
   --color-rl-red: #e2273c;
   --color-rl-line: #2e2820;
 }
-.rl-display { font-family: 'Bebas Neue', Impact, sans-serif; letter-spacing: 0.02em; }
-.rl-mono { font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.12em; text-transform: uppercase; }
-.rl-body { font-family: 'Inter', sans-serif; }
+
+/* Типографическая иерархия */
+h1, h2, h3 {
+  font-family: 'Unbounded', sans-serif;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  color: #a1a1aa;
+  line-height: 1.6;
+}
+
+.rl-display { font-family: 'Unbounded', sans-serif; font-weight: 900; text-transform: uppercase; letter-spacing: -0.02em; }
+.rl-mono { font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.85rem; }
+.rl-body { font-family: 'Inter', sans-serif; color: #a1a1aa; line-height: 1.6; }
 .rl-ring { position: absolute; border: 1px solid var(--color-rl-orange); border-radius: 9999px; opacity: 0.3; pointer-events:none; }
 .rl-ring { animation: rlSpin 50s linear infinite; }
 @keyframes rlSpin { to { transform: rotate(360deg); } }

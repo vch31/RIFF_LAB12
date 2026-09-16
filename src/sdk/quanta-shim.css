@@ -397,9 +397,9 @@
 .q-btn-start, .q-btn-end { display: inline-flex; align-items: center; }
 .q-btn-label { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
 .q-btn-primary { background: var(--hf-color-button-brand); color: var(--hf-color-button-label-brand); }
-.q-btn-primary:hover { filter: brightness(1.08); }
+.q-btn-primary:hover { filter: brightness(1.08); box-shadow: 0 0 20px rgba(255, 85, 0, 0.4); }
 .q-btn-secondary { background: var(--hf-color-transparent-light-10); color: var(--hf-color-text-primary); border-color: var(--hf-color-border-default); }
-.q-btn-secondary:hover { background: var(--hf-color-transparent-light-20); }
+.q-btn-secondary:hover { background: var(--hf-color-transparent-light-20); box-shadow: 0 0 20px rgba(255, 85, 0, 0.4); }
 .q-btn-tertiary { background: var(--hf-color-transparent-light-05); color: var(--hf-color-text-secondary); }
 .q-btn-tertiary:hover { color: var(--hf-color-text-primary); background: var(--hf-color-transparent-light-10); }
 .q-btn-ghost { background: transparent; color: var(--hf-color-text-secondary); }
@@ -422,8 +422,9 @@
 
 .q-card {
   border-radius: var(--hf-radius-400);
-  background: var(--hf-color-background-secondary);
-  border: 1px solid var(--hf-color-border-subtle);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 85, 0, 0.25);
+  backdrop-filter: blur(12px);
 }
 .q-card-glass { background: var(--hf-color-background-glass); backdrop-filter: blur(20px); }
 .q-card-raised { box-shadow: var(--hf-shadow-raised); }

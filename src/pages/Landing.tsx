@@ -214,9 +214,6 @@ export default function Landing() {
       </section>
 
       <section id="programs" className="max-w-6xl mx-auto px-6 py-24">
-        <div className="flex justify-center">
-          <Pill mode={mode} setMode={setMode} />
-        </div>
         {g ? (
           <Reveal>
             <div id="guitar" className="grid md:grid-cols-2 gap-12 items-center scroll-mt-24">

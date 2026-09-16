@@ -21,7 +21,9 @@
   padding: var(--hf-space-0);
   overflow: hidden;
   border-radius: var(--hf-radius-400);
-  background-color: transparent;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 85, 0, 0.25);
+  backdrop-filter: blur(12px);
   text-align: start;
   transition-property: border-color, box-shadow;
 
@@ -40,11 +42,11 @@
 }
 
 @utility q-media-card-frame-thin {
-  border: var(--hf-border-width-thin) solid var(--hf-color-border-default);
+  border: var(--hf-border-width-thin) solid rgba(255, 85, 0, 0.25);
 }
 
 @utility q-media-card-frame-thick {
-  border: var(--hf-border-width-thick) solid var(--hf-color-border-default);
+  border: var(--hf-border-width-thick) solid rgba(255, 85, 0, 0.25);
 }
 
 /* The composed Media box fills the frame; an explicit card height (e.g. a

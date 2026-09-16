@@ -17,7 +17,9 @@
   min-width: var(--hf-space-0);
   overflow: hidden;
   border-radius: var(--hf-radius-300);
-  background-color: var(--hf-color-background-secondary);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 85, 0, 0.25);
+  backdrop-filter: blur(12px);
 
   /* Interactive hosts (render={<button/>} / <a>) — cursor, hover, focus ring. */
   &:is(button, a) {
