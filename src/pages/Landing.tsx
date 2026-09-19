@@ -1,7 +1,31 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import jetImg from '../assets/JET.png';
+import nuxImg from '../assets/NUX.png';
 
 type Mode = "guitar" | "drums";
+
+function GearImage({ items }: { items: { label: string; src: string }[] }) {
+  const [tab, setTab] = useState(0);
+  return (
+    <div className="rounded-2xl bg-neutral-900 border border-neutral-800 overflow-hidden">
+      <div className="aspect-[4/5] flex items-center justify-center p-10 bg-gradient-to-b from-neutral-900 to-black">
+        <img src={items[tab].src} alt={items[tab].label} className="max-h-full max-w-full object-contain drop-shadow-2xl" />
+      </div>
+      <div className="flex border-t border-neutral-800">
+        {items.map((it, i) => (
+          <button
+            key={it.label}
+            onClick={() => setTab(i)}
+            className={"flex-1 rl-mono text-xs py-3 transition " + (i === tab ? "text-rl-orange bg-neutral-800/50" : "text-rl-muted hover:text-rl-ink")}
+          >
+            {it.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function Reveal({ children, className = "" }: { children: ReactNode; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -28,6 +52,61 @@ function Reveal({ children, className = "" }: { children: ReactNode; className?:
       >
         {children}
       </div>
+    </div>
+  );
+}
+
+const GUITAR_PROGRAM = [
+  {
+    title: "Постановка базы",
+    items: ["Вступление", "Строение гитары", "Постановка левой руки", "Постановка правой руки"],
+  },
+  {
+    title: "Техника игры",
+    items: ["Звукоизвлечение. Игра пальцами", "Звукоизвлечение. Заглушение струн", "Звукоизвлечение. Игра медиатором", "Упражнения для беглости пальцев"],
+  },
+  {
+    title: "Ритм и теория",
+    items: ["Ноты", "Гаммы", "Метроном для самостоятельных занятий", "Ритм. Длительности нот", "Упражнения с ускорением", "Упражнения для игры с медиатором", "Взаимодействие с барабанщиком. Ритмические рисунки"],
+  },
+  {
+    title: "Практика",
+    items: ["Аккорды", "Практика", "Обыгровки аккордов", "Гитарные фишки", "Практика всех изученных навыков"],
+  },
+];
+
+function Accordion({ groups }: { groups: { title: string; items: string[] }[] }) {
+  const [open, setOpen] = useState<number | null>(0);
+  return (
+    <div className="space-y-3">
+      {groups.map((g, i) => {
+        const isOpen = open === i;
+        return (
+          <div key={g.title} className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden">
+            <button
+              onClick={() => setOpen(isOpen ? null : i)}
+              className="w-full flex items-center justify-between px-6 py-5 text-left"
+            >
+              <span className="flex items-center gap-3">
+                <span className="rl-mono text-xs text-rl-orange">{String(i + 1).padStart(2, "0")}</span>
+                <span className="rl-display text-xl">{g.title}</span>
+              </span>
+              <span className={"rl-mono text-rl-orange text-lg transition-transform duration-300 " + (isOpen ? "rotate-45" : "")}>+</span>
+            </button>
+            <div className={"grid transition-all duration-300 ease-out " + (isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
+              <div className="overflow-hidden">
+                <ul className="px-6 pb-5 space-y-2 border-t border-neutral-800 pt-4">
+                  {g.items.map((it) => (
+                    <li key={it} className="text-sm text-rl-muted flex gap-3">
+                      <span className="text-rl-orange shrink-0">—</span>{it}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -224,35 +303,32 @@ export default function Landing() {
       <section id="programs" className="max-w-6xl mx-auto px-6 py-24">
         {g ? (
           <Reveal>
-            <div id="guitar" className="grid md:grid-cols-2 gap-12 items-center scroll-mt-24">
-              <div>
-                <Kicker>Riff Lab12 · Гитара</Kicker>
-                <h2 className="rl-display text-2xl sm:text-3xl md:text-4xl mb-4">Электро и акустика, с нуля</h2>
-                <p className="text-rl-muted mb-4">
-                  Обучение — это удовольствие, а не усталость ещё до занятия. Приезжаешь в студию,
-                  берёшь со стойки отстроенную гитару и подключаешься к комбику.
-                </p>
-                <ul className="rl-mono text-xs text-rl-muted grid grid-cols-2 gap-2">
-                  {["Постановка рук", "Звукоизвлечение", "Ноты и гаммы", "Аккорды и риффы", "Беглость пальцев", "Игра с динамикой"].map(
-                    (t) => (
-                      <li key={t} className="border border-rl-line rounded px-3 py-2">
-                        {t}
-                      </li>
-                    ),
-                  )}
-                </ul>
-              </div>
-              <div id="guitar-equipment" className="rounded-2xl bg-rl-panel border border-rl-line p-8 scroll-mt-24">
-                <div className="rl-mono text-xs text-rl-orange mb-2">Инструмент студии</div>
-                <div className="rl-display text-2xl mb-1">Jet JS-400 MBK R Black</div>
-                <p className="text-sm text-rl-muted">
-                  Stratocaster · мензура 25.5&quot; · гриф Modern C, обожжённый клён · 2×Ceramic (H-H)
-                </p>
-                <div className="rl-mono text-xs text-rl-orange mt-6 mb-2">Комбоусилитель</div>
-                <div className="rl-display text-2xl mb-1">NUX Mighty 20W-MKII</div>
-                <p className="text-sm text-rl-muted">20 Вт · 18 эффектов · Bluetooth · 4 канала</p>
-              </div>
+            <div id="guitar" className="scroll-mt-24">
+          <div className="mb-16">
+            <Kicker>Riff Lab12 · Гитара</Kicker>
+            <h2 className="rl-display text-4xl mb-4">Электро и акустика, с нуля</h2>
+            <p className="text-rl-muted mb-8 max-w-2xl">
+              Обучение — это удовольствие, а не усталость ещё до занятия. Приезжаешь в студию, берёшь
+              со стойки отстроенную гитару и подключаешься к комбику.
+            </p>
+            <Accordion groups={GUITAR_PROGRAM} />
+          </div>
+          <div id="guitar-equipment" className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start scroll-mt-24">
+            <div className="rounded-2xl bg-neutral-900 border border-neutral-800 p-8">
+              <div className="rl-mono text-xs text-rl-orange mb-2">Инструмент студии</div>
+              <div className="rl-display text-2xl mb-1">Jet JS-400 MBK R Black</div>
+              <p className="text-sm text-rl-muted">Stratocaster · мензура 25.5" · гриф Modern C, обожжённый клён · 2×Ceramic (H-H)</p>
+              <div className="rl-mono text-xs text-rl-orange mt-6 mb-2">Комбоусилитель</div>
+              <div className="rl-display text-2xl mb-1">NUX Mighty 20W-MKII</div>
+              <p className="text-sm text-rl-muted">20 Вт · 18 эффектов · Bluetooth · 4 канала</p>
             </div>
+            <GearImage items={[
+              { label: "Гитара", src: jetImg },
+              { label: "Комбик", src: nuxImg },
+            ]} />
+              </div>
+                </div>
+
           </Reveal>
         ) : (
           <Reveal>
