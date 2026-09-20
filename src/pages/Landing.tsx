@@ -300,37 +300,66 @@ export default function Landing() {
         </div>
       </section>
 
-      <section id="programs" className="max-w-6xl mx-auto px-6 py-24">
+
+<section id="programs" className="max-w-6xl mx-auto px-6 py-24">
         {g ? (
           <Reveal>
             <div id="guitar" className="scroll-mt-24">
-          <div className="mb-16">
-            <Kicker>Riff Lab12 · Гитара</Kicker>
-            <h2 className="rl-display text-4xl mb-4">Электро и акустика, с нуля</h2>
-            <p className="text-rl-muted mb-8 max-w-2xl">
-              Обучение — это удовольствие, а не усталость ещё до занятия. Приезжаешь в студию, берёшь
-              со стойки отстроенную гитару и подключаешься к комбику.
-            </p>
-            <Accordion groups={GUITAR_PROGRAM} />
-          </div>
-          <div id="guitar-equipment" className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start scroll-mt-24">
-            <div className="rounded-2xl bg-neutral-900 border border-neutral-800 p-8">
-              <div className="rl-mono text-xs text-rl-orange mb-2">Инструмент студии</div>
-              <div className="rl-display text-2xl mb-1">Jet JS-400 MBK R Black</div>
-              <p className="text-sm text-rl-muted">Stratocaster · мензура 25.5" · гриф Modern C, обожжённый клён · 2×Ceramic (H-H)</p>
-              <div className="rl-mono text-xs text-rl-orange mt-6 mb-2">Комбоусилитель</div>
-              <div className="rl-display text-2xl mb-1">NUX Mighty 20W-MKII</div>
-              <p className="text-sm text-rl-muted">20 Вт · 18 эффектов · Bluetooth · 4 канала</p>
-            </div>
-            <GearImage items={[
-              { label: "Гитара", src: jetImg },
-              { label: "Комбик", src: nuxImg },
-            ]} />
+              <div className="mb-16">
+                <Kicker>Riff Lab12 · Гитара</Kicker>
+                <h2 className="rl-display text-4xl mb-4">Электро и акустика, с нуля</h2>
+                <p className="text-rl-muted mb-8 max-w-2xl">
+                  Обучение — это удовольствие, а не усталость ещё до занятия. Приезжаешь в студию, берёшь
+                  со стойки отстроенную гитару и подключаешься к комбику.
+                </p>
+                <Accordion groups={GUITAR_PROGRAM} />
               </div>
+
+              <div id="guitar-equipment" className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center scroll-mt-24 py-12">
+                <div className="flex flex-col justify-center">
+                  <div className="rl-mono text-xs text-rl-orange mb-3 tracking-widest uppercase">Студийный сетап</div>
+                  <h2 className="rl-display text-3xl sm:text-4xl mb-10">Всё готово для игры с первой минуты</h2>
+
+                  <div className="space-y-8">
+                    <div className="flex gap-6 items-start">
+                      <span className="rl-display text-4xl text-neutral-700">01</span>
+                      <div>
+                        <div className="rl-mono text-xs text-rl-orange mb-1">ИНСТРУМЕНТ</div>
+                        <h3 className="rl-display text-xl mb-2">Jet JS-400 MBK R Black</h3>
+                        <p className="text-sm text-rl-muted leading-relaxed">
+                          Современный Stratocaster с мензурой 25.5", эргономичным грифом из обожжённого клёна и мощными керамическими датчиками (H-H).
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-6 items-start">
+                      <span className="rl-display text-4xl text-neutral-700">02</span>
+                      <div>
+                        <div className="rl-mono text-xs text-rl-orange mb-1">ЗВУК И ЭФФЕКТЫ</div>
+                        <h3 className="rl-display text-xl mb-2">NUX Mighty 20W-MKII</h3>
+                        <p className="text-sm text-rl-muted leading-relaxed">
+                          Мощный комбик на 20 Вт с поддержкой Bluetooth, 4 каналами и 18 встроенными эффектами. Никаких лишних проводов и долгих настроек.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
+                <div className="relative rounded-3xl bg-neutral-900 border border-neutral-800 p-8 flex items-center justify-center overflow-hidden min-h-[450px] group">
+                  <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ff5500_1px,transparent_1px)] [background-size:16px_16px]"></div>
+                  
+                  <img 
+                    src={jetImg} 
+                    alt="Электрогитара Jet в студии Riff Lab12" 
+                    className="relative z-10 max-h-[420px] w-auto object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.8)] transition-transform duration-700 group-hover:scale-105 group-hover:rotate-1" 
+                  />
+                </div>
+              </div>
+
+            </div>
           </Reveal>
         ) : (
+
           <Reveal>
             <div id="drums" className="grid md:grid-cols-2 gap-12 items-center scroll-mt-24">
               <div id="drum-equipment" className="rounded-2xl bg-rl-panel border border-rl-line p-8 md:order-2 scroll-mt-24">
