@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import jetImg from '../assets/JET.png';
-import nuxImg from '../assets/NUX.png';
+import nuxImg from '../assets/nux.png';
 
 type Mode = "guitar" | "drums";
 
