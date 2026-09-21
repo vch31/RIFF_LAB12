@@ -8,6 +8,65 @@ import drumsTeacherImg from '../assets/about_teacher_drum.png';
 
 type Mode = "guitar" | "drums";
 
+function GuitarIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <path d="M14 3L21 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="14" cy="3" r="1.4" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M9.5 8.5L15.5 14.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="7" cy="17" r="5" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="7" cy="17" r="1.6" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+function DrumIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <ellipse cx="12" cy="7" rx="8" ry="3" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M4 7v6c0 1.66 3.58 3 8 3s8-1.34 8-3V7" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M7 3l2 3M17 3l-2 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function TeacherPass({
+  photo,
+  role,
+  tone,
+  fields,
+}: {
+  photo: string;
+  role: string;
+  tone: "orange" | "red";
+  fields: [string, string][];
+}) {
+  const border = tone === "red" ? "border-rl-red" : "border-rl-orange";
+  const text = tone === "red" ? "text-rl-red" : "text-rl-orange";
+  return (
+    <div className={"relative mx-auto max-w-sm rotate-[-3deg] rounded-3xl border-2 bg-neutral-900 p-2 shadow-2xl " + border}>
+      <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-rl-bg border-2 border-neutral-700 z-10" />
+      <div className="rounded-2xl overflow-hidden bg-neutral-900">
+        <div className="aspect-[3/4] relative">
+          <img src={photo} alt={role} className="w-full h-full object-cover grayscale" />
+          <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-neutral-900 to-transparent" />
+        </div>
+        <div className="p-5">
+          <div className={"rl-mono text-[10px] mb-3 tracking-widest " + text}>ALL ACCESS · {role}</div>
+          <div className="space-y-1.5 border-t border-neutral-800 pt-3">
+            {fields.map(([k, v]) => (
+              <div key={k} className="flex justify-between text-xs rl-mono">
+                <span className="text-rl-muted">{k}</span>
+                <span>{v}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function GearImage({ items }: { items: { label: string; src: string }[] }) {
   const [tab, setTab] = useState(0);
   return (
@@ -151,74 +210,39 @@ function CTA({
 }
 
 function Picker({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void }) {
+  const cards: { key: Mode; label: string; desc: string; Icon: typeof GuitarIcon; tone: "orange" | "red" }[] = [
+    { key: "guitar", label: "RIFF LAB12", desc: "Электро и акустическая гитара", Icon: GuitarIcon, tone: "orange" },
+    { key: "drums", label: "DRUM LAB12", desc: "Ударная установка", Icon: DrumIcon, tone: "red" },
+  ];
   return (
     <div className="grid sm:grid-cols-2 gap-3 sm:gap-4 max-w-xl mx-auto mb-6 sm:mb-10">
-
-      {/* Гитарная карточка */}
-      <button
-        type="button"
-        onClick={() => setMode("guitar")}
-        aria-pressed={mode === "guitar"}
-        className={
-          "group relative text-left rounded-2xl border-2 p-4 sm:p-5 cursor-pointer select-none " +
-          "transition-all duration-200 ease-out will-change-transform " +
-          "hover:-translate-y-0.5 hover:shadow-lg hover:shadow-rl-orange/10 " +
-          "active:translate-y-0 active:scale-[0.98] " +
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rl-orange/60 focus-visible:ring-offset-2 focus-visible:ring-offset-rl-bg " +
-          (mode === "guitar"
-            ? "border-rl-orange bg-rl-orange/10 shadow-lg shadow-rl-orange/10"
-            : "border-rl-line bg-rl-panel/40 hover:border-rl-orange/60 hover:bg-rl-orange/5")
-        }
-      >
-        <div className="text-xl sm:text-2xl mb-0.5 sm:mb-1 transition-transform duration-200 group-hover:scale-110 group-active:scale-95">
-          🎸
-        </div>
-        <div className="rl-display text-lg sm:text-xl mb-0.5">RIFF LAB12</div>
-        <div className="text-xs text-rl-muted">Электро и акустическая гитара</div>
-
-        <span
-          className={
-            "absolute top-3 right-3 rl-mono text-xs transition-opacity duration-200 " +
-            (mode === "guitar" ? "opacity-100 text-rl-orange" : "opacity-0")
-          }
-          aria-hidden
-        >
-          ✓
-        </span>
-      </button>
-
-      {/* Барабанная карточка */}
-      <button
-        type="button"
-        onClick={() => setMode("drums")}
-        aria-pressed={mode === "drums"}
-        className={
-          "group relative text-left rounded-2xl border-2 p-4 sm:p-5 cursor-pointer select-none " +
-          "transition-all duration-200 ease-out will-change-transform " +
-          "hover:-translate-y-0.5 hover:shadow-lg hover:shadow-rl-red/10 " +
-          "active:translate-y-0 active:scale-[0.98] " +
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rl-red/60 focus-visible:ring-offset-2 focus-visible:ring-offset-rl-bg " +
-          (mode === "drums"
-            ? "border-rl-red bg-rl-red/10 shadow-lg shadow-rl-red/10"
-            : "border-rl-line bg-rl-panel/40 hover:border-rl-red/60 hover:bg-rl-red/5")
-        }
-      >
-        <div className="text-xl sm:text-2xl mb-0.5 sm:mb-1 transition-transform duration-200 group-hover:scale-110 group-active:scale-95">
-          🥁
-        </div>
-        <div className="rl-display text-lg sm:text-xl mb-0.5">DRUM LAB12</div>
-        <div className="text-xs text-rl-muted">Ударная установка</div>
-
-        <span
-          className={
-            "absolute top-3 right-3 rl-mono text-xs transition-opacity duration-200 " +
-            (mode === "drums" ? "opacity-100 text-rl-red" : "opacity-0")
-          }
-          aria-hidden
-        >
-          ✓
-        </span>
-      </button>
+      {cards.map(({ key, label, desc, Icon, tone }) => {
+        const active = mode === key;
+        const border = tone === "red" ? "border-rl-red" : "border-rl-orange";
+        const text = tone === "red" ? "text-rl-red" : "text-rl-orange";
+        const shadow = tone === "red" ? "shadow-rl-red/20" : "shadow-rl-orange/20";
+        const dot = tone === "red" ? "bg-rl-red" : "bg-rl-orange";
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setMode(key)}
+            aria-pressed={active}
+            className={
+              "group relative text-left rounded-2xl border-2 p-4 sm:p-5 cursor-pointer select-none " +
+              "transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-rl-bg " +
+              (active
+                ? border + " bg-rl-panel shadow-lg " + shadow
+                : "border-rl-line bg-rl-panel/20 opacity-50 grayscale hover:opacity-80 hover:grayscale-0")
+            }
+          >
+            <Icon className={"w-7 h-7 sm:w-8 sm:h-8 mb-2 " + (active ? text : "text-rl-muted")} />
+            <div className="rl-display text-lg sm:text-xl mb-0.5">{label}</div>
+            <div className="text-xs text-rl-muted">{desc}</div>
+            {active && <span className={"absolute top-4 right-4 w-2 h-2 rounded-full " + dot} />}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -261,12 +285,13 @@ export default function Landing() {
   useEffect(() => {
     const onScroll = () => {
       const pastHero = window.scrollY > window.innerHeight * 0.9;
-      const contact = document.getElementById("contact");
-      // если секция #contact показалась хотя бы на 40% — прячем кнопку
-      const atContact = contact
-        ? contact.getBoundingClientRect().top < window.innerHeight * 0.6
-        : false;
-      setShowCta(pastHero && !atContact);
+      const hideNear = (id: string) => {
+        const el = document.getElementById(id);
+        if (!el) return false;
+        const rect = el.getBoundingClientRect();
+        return rect.top < window.innerHeight * 0.6 && rect.bottom > window.innerHeight * 0.1;
+      };
+      setShowCta(pastHero && !hideNear("contact") && !hideNear("team"));
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -317,7 +342,7 @@ export default function Landing() {
       </div>
     </header>
 
-      <section className="relative pt-40 pb-24 px-6 overflow-hidden min-h-[85vh] flex items-center">
+      <section className="relative pt-24 sm:pt-32 md:pt-40 pb-16 sm:pb-20 md:pb-24 px-6 overflow-hidden min-h-[85vh] flex items-center">
         <video
           className="absolute inset-0 w-full h-full object-cover opacity-45"
           src={`${import.meta.env.BASE_URL}media/hero.mp4`}
@@ -546,66 +571,100 @@ export default function Landing() {
         </Reveal>
       </section>
 
-      <section id="team" className="max-w-6xl mx-auto px-6 py-24">
-        <Reveal key={mode}>
-          {g ? (
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-              <div className="relative rounded-3xl overflow-hidden border border-rl-line aspect-[4/5]">
-                <img
-                  src={guitarTeacherImg}
-                  alt="Преподаватель гитары Riff Lab12"
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-              </div>
-              <div>
-                <Kicker tone="orange">Преподаватель · Гитара</Kicker>
-                <h2 className="rl-display text-3xl sm:text-4xl md:text-5xl mb-6">
-                  С кем вы будете заниматься
-                </h2>
-                <div className="rl-mono text-xs text-rl-orange mb-3">Riff Lab12</div>
-                <p className="text-sm md:text-base text-rl-muted leading-relaxed mb-6">
-                  Индивидуальные занятия на электро и акустической гитаре для взрослых и детей, уровень с нуля.
-                  Записаться — Telegram @riff_arina или директ Instagram.
-                </p>
-                <CTA href="https://t.me/riff_arina" ext tone="orange">
-                  Записаться к преподавателю
-                </CTA>
-              </div>
-            </div>
-          ) : (
-            /* ─── Преподаватель барабанов: большое фото на весь блок ─── */
-            <div className="relative rounded-3xl overflow-hidden border border-rl-line min-h-[600px] md:min-h-[680px] flex items-end">
-              {/* Фото на фон */}
-              <img
-                src={drumsTeacherImg}
-                alt="Преподаватель ударных Drum Lab12"
-                className="absolute inset-0 w-full h-full object-cover object-center"
-              />
+<section id="team" className="max-w-6xl mx-auto px-6 py-24">
+  <Reveal key={mode}>
+      {g ? (
+        <div className="grid lg:grid-cols-[380px_1fr] gap-12 lg:gap-16 items-center">
+          <TeacherPass
+            photo={guitarTeacherImg}
+            role="RIFF LAB12"
+            tone="orange"
+            fields={[
+              ["Специализация", "Электро и акустика"],
+              ["Уровень", "С нуля"],
+              ["Занятие", "60 минут"],
+              ["Формат", "Индивидуально"],
+            ]}
+          />
+          <div>
+            <Kicker tone="orange">Преподаватель · Гитара</Kicker>
+            <p className="rl-display text-3xl md:text-4xl leading-tight mb-6">
+              «Гитара — честная конкуренция со стрессом»
+            </p>
+            <p className="text-sm md:text-base text-rl-muted leading-relaxed mb-8 max-w-md">
+              Индивидуальные занятия на электро и акустической гитаре для взрослых и детей, уровень
+              с нуля. Записаться — Telegram @riff_arina или директ Instagram.
+            </p>
+            <CTA href="https://t.me/riff_arina" ext tone="orange">
+              Записаться к преподавателю
+            </CTA>
+          </div>
+        </div>
+      ) : (
 
-              {/* Затемняющий градиент снизу, чтобы текст читался */}
-              <div className="absolute inset-0 bg-gradient-to-t from-rl-bg via-rl-bg/70 to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-r from-rl-bg/60 via-transparent to-transparent" />
+      /* ─── Преподаватель барабанов: большое фото на весь блок ─── */
+      <div className="relative rounded-3xl overflow-hidden border border-rl-line min-h-[600px] md:min-h-[680px] flex items-end">
+        {/* Фото на фон */}
+        <img
+          src={drumsTeacherImg}
+          alt="Преподаватель ударных Drum Lab12"
+          className="absolute inset-0 w-full h-full object-cover object-center"
+        />
 
-              {/* Текст поверх фото */}
-              <div className="relative z-10 p-8 md:p-14 max-w-2xl">
-                <Kicker tone="red">Преподаватель · Ударные</Kicker>
-                <h2 className="rl-display text-3xl sm:text-4xl md:text-5xl mb-6">
-                  С кем вы будете заниматься
-                </h2>
-                <div className="rl-mono text-xs text-rl-red mb-3">Drum Lab12</div>
-                <p className="text-sm md:text-base text-rl-muted leading-relaxed mb-6">
-                  Гродненский гос. колледж искусств, факультет «Музыкальное искусство», специальность
-                  «Искусство эстрады». На ударных с 13 лет, преподаёт с 2018. Экс-барабанщица
-                  кавер-группы «Хит Хантер», сессионный и студийный барабанщик.
-                </p>
-                <CTA href={igUrl} ext tone="red">
-                  Записаться к преподавателю
-                </CTA>
+        {/* Нижний градиент — тёмный низ */}
+        <div className="absolute inset-0 bg-gradient-to-t from-rl-bg via-rl-bg/60 to-transparent" />
+
+        {/* Левый градиент — тёмный левый край */}
+        <div className="absolute inset-0 bg-gradient-to-r from-rl-bg via-rl-bg/60 to-transparent" />
+
+        {/* Лёгкое затемнение всего фото для общей глубины */}
+        <div className="absolute inset-0 bg-black/20" />
+
+        {/* Текст поверх фото */}
+        <div className="relative z-10 p-8 md:p-14 max-w-2xl">
+          <Kicker tone="red">Преподаватель · Ударные</Kicker>
+          <h2 className="rl-display text-3xl sm:text-4xl md:text-5xl mb-6">
+            С кем вы будете заниматься
+          </h2>
+          <div className="rl-mono text-xs text-rl-red mb-5">Drum Lab12</div>
+
+          <div className="space-y-4 mb-6">
+            <div>
+              <div className="rl-mono text-[11px] text-rl-red mb-1.5 tracking-widest uppercase">
+                Образование
               </div>
+              <p className="text-sm md:text-base text-rl-muted leading-relaxed">
+                Гродненский государственный колледж искусств · факультет «Музыкальное искусство» · специальность «Искусство эстрады»
+              </p>
             </div>
-          )}
-        </Reveal>
-      </section>
+
+            <div>
+              <div className="rl-mono text-[11px] text-rl-red mb-1.5 tracking-widest uppercase">
+                Опыт
+              </div>
+              <p className="text-sm md:text-base text-rl-muted leading-relaxed">
+                Играю на ударных с 13 лет. Преподаю с 2018 года.
+              </p>
+            </div>
+
+            <div>
+              <div className="rl-mono text-[11px] text-rl-red mb-1.5 tracking-widest uppercase">
+                Творческая деятельность
+              </div>
+              <p className="text-sm md:text-base text-rl-muted leading-relaxed">
+                Экс-барабанщица кавер-группы «Хит Хантер». Сессионный и студийный барабанщик.
+              </p>
+            </div>
+          </div>
+
+          <CTA href={igUrl} ext tone="red">
+            Записаться к преподавателю
+          </CTA>
+        </div>
+      </div>
+    )}
+  </Reveal>
+</section>
 
       <section id="pricing" className="bg-rl-panel border-y border-rl-line py-24 px-6">
         <Reveal className="max-w-md mx-auto">
@@ -679,15 +738,18 @@ export default function Landing() {
 {/* ─── Плавающая кнопка только на мобильных ─── */}
 <div
   className={
-    "fixed bottom-4 left-4 right-4 z-50 md:hidden transition-all duration-500 ease-out motion-reduce:transition-none " +
+    "fixed bottom-5 inset-x-0 z-50 flex justify-center px-6 md:hidden transition-all duration-500 ease-out motion-reduce:transition-none " +
     (showCta ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6 pointer-events-none")
   }
 >
   <a
     href="#contact"
     className={
-      "flex items-center justify-center w-full py-3.5 px-6 text-rl-bg font-bold rl-mono text-xs tracking-wider uppercase rounded-full shadow-2xl active:scale-95 transition-transform " +
-      (g ? "bg-rl-orange shadow-rl-orange/30" : "bg-rl-red shadow-rl-red/30")
+      "flex items-center justify-center gap-2 py-3 px-7 rl-mono text-xs tracking-wider uppercase rounded-full " +
+      "backdrop-blur-md bg-rl-bg/60 border shadow-2xl active:scale-95 transition-transform " +
+      (g
+        ? "border-rl-orange/50 text-rl-orange shadow-rl-orange/10"
+        : "border-rl-red/50 text-rl-red shadow-rl-red/10")
     }
   >
     Записаться на пробное
