@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import jetImg from '../assets/JET.png';
 import nuxImg from '../assets/nux-amp.png';
+import guitarTeacherImg from '../assets/teacher_riff.jpg';
+import drumsTeacherImg from '../assets/about_teacher_drum.png';
+
 
 type Mode = "guitar" | "drums";
 
@@ -149,28 +152,72 @@ function CTA({
 
 function Picker({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void }) {
   return (
-    <div className="grid sm:grid-cols-2 gap-4 max-w-xl mx-auto mb-10">
+    <div className="grid sm:grid-cols-2 gap-3 sm:gap-4 max-w-xl mx-auto mb-6 sm:mb-10">
+
+      {/* Гитарная карточка */}
       <button
+        type="button"
         onClick={() => setMode("guitar")}
+        aria-pressed={mode === "guitar"}
         className={
-          "text-left rounded-2xl border-2 p-5 transition " +
-          (mode === "guitar" ? "border-rl-orange bg-rl-orange/10" : "border-rl-line hover:border-rl-orange/60")
+          "group relative text-left rounded-2xl border-2 p-4 sm:p-5 cursor-pointer select-none " +
+          "transition-all duration-200 ease-out will-change-transform " +
+          "hover:-translate-y-0.5 hover:shadow-lg hover:shadow-rl-orange/10 " +
+          "active:translate-y-0 active:scale-[0.98] " +
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rl-orange/60 focus-visible:ring-offset-2 focus-visible:ring-offset-rl-bg " +
+          (mode === "guitar"
+            ? "border-rl-orange bg-rl-orange/10 shadow-lg shadow-rl-orange/10"
+            : "border-rl-line bg-rl-panel/40 hover:border-rl-orange/60 hover:bg-rl-orange/5")
         }
       >
-        <div className="text-2xl mb-1">🎸</div>
-        <div className="rl-display text-xl">RIFF LAB12</div>
+        <div className="text-xl sm:text-2xl mb-0.5 sm:mb-1 transition-transform duration-200 group-hover:scale-110 group-active:scale-95">
+          🎸
+        </div>
+        <div className="rl-display text-lg sm:text-xl mb-0.5">RIFF LAB12</div>
         <div className="text-xs text-rl-muted">Электро и акустическая гитара</div>
+
+        <span
+          className={
+            "absolute top-3 right-3 rl-mono text-xs transition-opacity duration-200 " +
+            (mode === "guitar" ? "opacity-100 text-rl-orange" : "opacity-0")
+          }
+          aria-hidden
+        >
+          ✓
+        </span>
       </button>
+
+      {/* Барабанная карточка */}
       <button
+        type="button"
         onClick={() => setMode("drums")}
+        aria-pressed={mode === "drums"}
         className={
-          "text-left rounded-2xl border-2 p-5 transition " +
-          (mode === "drums" ? "border-rl-red bg-rl-red/10" : "border-rl-line hover:border-rl-red/60")
+          "group relative text-left rounded-2xl border-2 p-4 sm:p-5 cursor-pointer select-none " +
+          "transition-all duration-200 ease-out will-change-transform " +
+          "hover:-translate-y-0.5 hover:shadow-lg hover:shadow-rl-red/10 " +
+          "active:translate-y-0 active:scale-[0.98] " +
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rl-red/60 focus-visible:ring-offset-2 focus-visible:ring-offset-rl-bg " +
+          (mode === "drums"
+            ? "border-rl-red bg-rl-red/10 shadow-lg shadow-rl-red/10"
+            : "border-rl-line bg-rl-panel/40 hover:border-rl-red/60 hover:bg-rl-red/5")
         }
       >
-        <div className="text-2xl mb-1">🥁</div>
-        <div className="rl-display text-xl">DRUM LAB12</div>
+        <div className="text-xl sm:text-2xl mb-0.5 sm:mb-1 transition-transform duration-200 group-hover:scale-110 group-active:scale-95">
+          🥁
+        </div>
+        <div className="rl-display text-lg sm:text-xl mb-0.5">DRUM LAB12</div>
         <div className="text-xs text-rl-muted">Ударная установка</div>
+
+        <span
+          className={
+            "absolute top-3 right-3 rl-mono text-xs transition-opacity duration-200 " +
+            (mode === "drums" ? "opacity-100 text-rl-red" : "opacity-0")
+          }
+          aria-hidden
+        >
+          ✓
+        </span>
       </button>
     </div>
   );
@@ -208,7 +255,27 @@ const SOCIALS: Array<[string, string]> = [
 
 export default function Landing() {
   const [mode, setMode] = useState<Mode>("guitar");
+  const [showCta, setShowCta] = useState(false);
   const g = mode === "guitar";
+
+  useEffect(() => {
+    const onScroll = () => {
+      const pastHero = window.scrollY > window.innerHeight * 0.9;
+      const contact = document.getElementById("contact");
+      // если секция #contact показалась хотя бы на 40% — прячем кнопку
+      const atContact = contact
+        ? contact.getBoundingClientRect().top < window.innerHeight * 0.6
+        : false;
+      setShowCta(pastHero && !atContact);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, []);
   const eqHref = g ? "#guitar-equipment" : "#drum-equipment";
   const igHandle = g ? "riff_lab12" : "drum_lab12";
   const igUrl = "https://www.instagram.com/" + igHandle;
@@ -222,24 +289,33 @@ export default function Landing() {
   ];
   return (
     <main className="rl-body bg-rl-bg text-rl-ink overflow-x-hidden">
-      <header className={"fixed top-0 inset-x-0 z-50 backdrop-blur bg-rl-bg/80 border-b h-14 md:h-16 overflow-hidden " + (g ? "border-rl-line" : "border-rl-red/30")}>
-        <div className="max-w-6xl mx-auto px-4 md:px-8 h-full flex items-center justify-between">
-          <span className="rl-display text-base md:text-lg tracking-widest whitespace-nowrap flex-shrink-0">
-            RIFF<span className="text-rl-orange">LAB12</span>{" "}
-            <span className="text-rl-muted text-base">×</span> DRUM<span className="text-rl-red">LAB12</span>
+    <header className={"fixed top-0 inset-x-0 z-50 backdrop-blur bg-rl-bg/80 border-b h-11 md:h-16 overflow-hidden " + (g ? "border-rl-line" : "border-rl-red/30")}>
+      <div className="max-w-6xl mx-auto px-4 md:px-8 h-full flex items-center justify-between gap-3">
+
+        {/* Лого: на мобильных — только активный бренд, на ПК — всегда оба */}
+        <span className="rl-display text-xs sm:text-base md:text-lg tracking-tight sm:tracking-widest whitespace-nowrap flex-shrink-0">
+          <span className="sm:hidden">
+            {g ? (
+              <>RIFF<span className="text-rl-orange">LAB12</span></>
+            ) : (
+              <>DRUM<span className="text-rl-red">LAB12</span></>
+            )}
           </span>
-          <nav className="hidden md:flex gap-6 rl-mono text-xs text-rl-muted">
-            {NAV.map(([h, l]) => (
-              <a key={l} href={h} className={"hover:" + (g ? "text-rl-orange" : "text-rl-red")}>
-                {l}
-              </a>
-            ))}
-          </nav>
-          <CTA href="#contact" tone={tone} className="max-h-9 py-1 px-3 text-[11px] md:text-xs font-bold leading-tight uppercase rounded-full flex-shrink-0">
-            Пробное занятие
-          </CTA>
-        </div>
-      </header>
+          <span className="hidden sm:inline">
+            RIFF<span className="text-rl-orange">LAB12</span>{" "}
+            <span className="text-rl-muted">×</span> DRUM<span className="text-rl-red">LAB12</span>
+          </span>
+        </span>
+
+        <nav className="hidden md:flex gap-6 rl-mono text-xs text-rl-muted">
+          {NAV.map(([h, l]) => (
+            <a key={l} href={h} className={"hover:" + (g ? "text-rl-orange" : "text-rl-red")}>
+              {l}
+            </a>
+          ))}
+        </nav>
+      </div>
+    </header>
 
       <section className="relative pt-40 pb-24 px-6 overflow-hidden min-h-[85vh] flex items-center">
         <video
@@ -259,16 +335,16 @@ export default function Landing() {
         />
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <Kicker tone={tone}>Гродно · Студия гитары и ударных</Kicker>
-          <h1 className="rl-display text-2xl sm:text-4xl md:text-6xl leading-tight tracking-tight font-black mb-6">
-            Куда сбежать в конце дня,
-            <br />
-            чтобы найти себя?
-          </h1>
-          <p className="text-rl-muted text-lg mb-4 max-w-xl mx-auto">
-            Индивидуальные занятия для взрослых и детей от 10 лет, на топовых инструментах — свои
-            везти не нужно.
-          </p>
-          <p className="rl-mono text-sm mt-8 mb-4 tracking-widest">
+            <h1 className="rl-display text-[clamp(36px,9vw,64px)] leading-[1.05] tracking-tight font-black mb-6">
+              Куда сбежать в конце дня,
+              <br />
+              чтобы найти себя?
+            </h1>
+            <p className="text-rl-muted text-[clamp(16px,2.2vw,17px)] leading-relaxed max-w-xl mx-auto mb-6 sm:mb-8">
+              Приходите в студию со свежей головой, а не с тяжёлым чехлом!<br />
+              Инструменты для наших учеников уже в студии.
+            </p>
+          <p className="rl-mono text-sm mt-5 sm:mt-8 mb-3 sm:mb-4 tracking-widest">
             <span className="text-rl-orange">Выбери,</span>{" "}
             <span className="text-rl-red">с чего начать</span>
           </p>
@@ -284,21 +360,55 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="border-y border-rl-line bg-rl-panel">
-        <div className="max-w-6xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {[
-            ["1 на 1", "Индивидуально с преподавателем"],
-            ["60 минут", "Одно занятие"],
-            ["от 10 лет", "Взрослым и детям"],
-            ["0 багажа", "Инструмент и комбик — наши"],
-          ].map(([a, b]) => (
-            <Reveal key={a}>
-              <div className={"rl-display text-3xl " + (g ? "text-rl-orange" : "text-rl-red")}>{a}</div>
-              <div className="text-sm text-rl-muted mt-1">{b}</div>
-            </Reveal>
-          ))}
+<section className="border-y border-rl-line bg-rl-panel">
+  {(() => {
+    const STATS: Array<[string, string]> = [
+      ["1 на 1", "Индивидуально с преподавателем"],
+      ["60 минут", "Одно занятие"],
+      ["от 10 лет", "Взрослым и детям"],
+      ["0 багажа", "Инструмент и комбик — наши"],
+    ];
+    const accent = g ? "text-rl-orange" : "text-rl-red";
+
+    return (
+      <>
+        {/* ─── Мобильные: бегущая строка ─── */}
+        <div className="md:hidden relative overflow-hidden py-8">
+          {/* затемнение по краям */}
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-12 z-10 bg-gradient-to-r from-rl-panel to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-12 z-10 bg-gradient-to-l from-rl-panel to-transparent" />
+
+          <div className="flex w-max rl-marquee">
+            {[0, 1].map((dup) => (
+              <div key={dup} className="flex shrink-0" aria-hidden={dup === 1}>
+                {STATS.map(([a, b]) => (
+                  <div key={a + dup} className="flex flex-col items-center px-8 shrink-0">
+                    <div className={"rl-display text-2xl leading-none whitespace-nowrap " + accent}>
+                      {a}
+                    </div>
+                    <div className="text-xs text-rl-muted mt-1 whitespace-nowrap">{b}</div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
-      </section>
+
+        {/* ─── Десктоп: сетка ─── */}
+        <div className="hidden md:block max-w-6xl mx-auto px-6 py-10">
+          <div className="grid grid-cols-4 gap-8 text-center">
+            {STATS.map(([a, b]) => (
+              <Reveal key={a}>
+                <div className={"rl-display text-3xl leading-none " + accent}>{a}</div>
+                <div className="text-sm text-rl-muted mt-1">{b}</div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </>
+    );
+  })()}
+</section>
 
 
 <section id="programs" className="max-w-6xl mx-auto px-6 py-24">
@@ -411,46 +521,87 @@ export default function Landing() {
         <Reveal className="max-w-3xl mx-auto">
           <Kicker tone={tone}>Что вы получите</Kicker>
           <h2 className="rl-display text-2xl sm:text-3xl md:text-4xl mb-10">Шесть причин начать</h2>
-          <ol className="space-y-5">
-            {[
-              "Играть для себя и с друзьями",
-              "Играть в группе, выступать, писать треки",
-              "Создать свой коллектив",
-              "Поступить в музыкальное учебное заведение",
-              "Построить карьеру музыканта",
-              "Переключаться от рутины после работы",
-            ].map((t, i) => (
-              <li key={t} className="flex gap-5 items-start">
-                <span className={"rl-display text-3xl w-10 " + (g ? "text-rl-orange" : "text-rl-red")}>
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <span className="pt-1">{t}</span>
-              </li>
-            ))}
-          </ol>
+            <ol className="space-y-5">
+              {[
+                "Играть для себя и с друзьями",
+                "Играть в группе, выступать, писать треки",
+                "Создать свой коллектив",
+                "Поступить в музыкальное учебное заведение",
+                "Построить карьеру музыканта",
+                "Переключаться от рутины после работы",
+              ].map((t, i) => (
+                <li key={t} className="flex gap-5 items-start">
+                  <span
+                    className={
+                      "rl-display text-3xl w-12 text-right shrink-0 tabular-nums " +
+                      (g ? "text-rl-orange" : "text-rl-red")
+                    }
+                  >
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className="pt-1 text-left flex-1">{t}</span>
+                </li>
+              ))}
+            </ol>
         </Reveal>
       </section>
 
-      <section id="team" className="max-w-2xl mx-auto px-6 py-24">
-        <Reveal>
-          <Kicker tone={tone}>Преподаватель</Kicker>
-          <h2 className="rl-display text-2xl sm:text-3xl md:text-4xl mb-10">С кем вы будете заниматься</h2>
+      <section id="team" className="max-w-6xl mx-auto px-6 py-24">
+        <Reveal key={mode}>
           {g ? (
-            <div className="rounded-2xl border border-rl-line p-8">
-              <div className="rl-mono text-xs text-rl-orange mb-3">Гитара · Riff Lab12</div>
-              <p className="text-sm text-rl-muted leading-relaxed">
-                Индивидуальные занятия на электро и акустической гитаре для взрослых и детей, уровень
-                с нуля. Записаться — Telegram @riff_arina или директ Instagram.
-              </p>
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              <div className="relative rounded-3xl overflow-hidden border border-rl-line aspect-[4/5]">
+                <img
+                  src={guitarTeacherImg}
+                  alt="Преподаватель гитары Riff Lab12"
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              </div>
+              <div>
+                <Kicker tone="orange">Преподаватель · Гитара</Kicker>
+                <h2 className="rl-display text-3xl sm:text-4xl md:text-5xl mb-6">
+                  С кем вы будете заниматься
+                </h2>
+                <div className="rl-mono text-xs text-rl-orange mb-3">Riff Lab12</div>
+                <p className="text-sm md:text-base text-rl-muted leading-relaxed mb-6">
+                  Индивидуальные занятия на электро и акустической гитаре для взрослых и детей, уровень с нуля.
+                  Записаться — Telegram @riff_arina или директ Instagram.
+                </p>
+                <CTA href="https://t.me/riff_arina" ext tone="orange">
+                  Записаться к преподавателю
+                </CTA>
+              </div>
             </div>
           ) : (
-            <div className="rounded-2xl border border-rl-line p-8">
-              <div className="rl-mono text-xs text-rl-red mb-3">Ударные · Drum Lab12</div>
-              <p className="text-sm text-rl-muted leading-relaxed">
-                Гродненский гос. колледж искусств, факультет «Музыкальное искусство», специальность
-                «Искусство эстрады». На ударных с 13 лет, преподаёт с 2018. Экс-барабанщица
-                кавер-группы «Хит Хантер», сессионный и студийный барабанщик.
-              </p>
+            /* ─── Преподаватель барабанов: большое фото на весь блок ─── */
+            <div className="relative rounded-3xl overflow-hidden border border-rl-line min-h-[600px] md:min-h-[680px] flex items-end">
+              {/* Фото на фон */}
+              <img
+                src={drumsTeacherImg}
+                alt="Преподаватель ударных Drum Lab12"
+                className="absolute inset-0 w-full h-full object-cover object-center"
+              />
+
+              {/* Затемняющий градиент снизу, чтобы текст читался */}
+              <div className="absolute inset-0 bg-gradient-to-t from-rl-bg via-rl-bg/70 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-rl-bg/60 via-transparent to-transparent" />
+
+              {/* Текст поверх фото */}
+              <div className="relative z-10 p-8 md:p-14 max-w-2xl">
+                <Kicker tone="red">Преподаватель · Ударные</Kicker>
+                <h2 className="rl-display text-3xl sm:text-4xl md:text-5xl mb-6">
+                  С кем вы будете заниматься
+                </h2>
+                <div className="rl-mono text-xs text-rl-red mb-3">Drum Lab12</div>
+                <p className="text-sm md:text-base text-rl-muted leading-relaxed mb-6">
+                  Гродненский гос. колледж искусств, факультет «Музыкальное искусство», специальность
+                  «Искусство эстрады». На ударных с 13 лет, преподаёт с 2018. Экс-барабанщица
+                  кавер-группы «Хит Хантер», сессионный и студийный барабанщик.
+                </p>
+                <CTA href={igUrl} ext tone="red">
+                  Записаться к преподавателю
+                </CTA>
+              </div>
             </div>
           )}
         </Reveal>
@@ -525,16 +676,34 @@ export default function Landing() {
         </Reveal>
       </section>
 
-      <footer className="border-t border-rl-line py-10 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <span className="rl-display text-lg">
-            RIFF<span className="text-rl-orange">LAB12</span> × DRUM<span className="text-rl-red">LAB12</span>
-          </span>
-          <p className="text-xs text-rl-muted">
-            © 2026 Riff Lab12 · Drum Lab12. Студии гитары и ударных, Гродно.
-          </p>
-        </div>
-      </footer>
+{/* ─── Плавающая кнопка только на мобильных ─── */}
+<div
+  className={
+    "fixed bottom-4 left-4 right-4 z-50 md:hidden transition-all duration-500 ease-out motion-reduce:transition-none " +
+    (showCta ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6 pointer-events-none")
+  }
+>
+  <a
+    href="#contact"
+    className={
+      "flex items-center justify-center w-full py-3.5 px-6 text-rl-bg font-bold rl-mono text-xs tracking-wider uppercase rounded-full shadow-2xl active:scale-95 transition-transform " +
+      (g ? "bg-rl-orange shadow-rl-orange/30" : "bg-rl-red shadow-rl-red/30")
+    }
+  >
+    Записаться на пробное
+  </a>
+</div>
+
+<footer className="border-t border-rl-line pt-10 pb-28 md:pb-10 px-6">
+  <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+    <span className="rl-display text-lg">
+      RIFF<span className="text-rl-orange">LAB12</span> × DRUM<span className="text-rl-red">LAB12</span>
+    </span>
+    <p className="text-xs text-rl-muted">
+      © 2026 Riff Lab12 · Drum Lab12. Студии гитары и ударных, Гродно.
+    </p>
+  </div>
+</footer>
     </main>
   );
 }
