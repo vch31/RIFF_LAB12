@@ -184,13 +184,14 @@
 }
 
 @theme inline {
-  --color-rl-bg: #0b0b0c;
-  --color-rl-panel: #151210;
-  --color-rl-ink: #f5f1ea;
-  --color-rl-muted: #a1a1aa;
+  --color-rl-bg: #0a0a0a;        /* фон страницы — чистый чёрный */
+  --color-rl-panel: #141414;     /* секции, бегущая строка, плашки */
+  --color-rl-card: #1e1e1e;      /* карточки: аккордеон, активный Picker */
+  --color-rl-ink: #fafafa;       /* основной текст */
+  --color-rl-muted: #a3a3a3;     /* приглушённый */
+  --color-rl-line: #262626;      /* границы каркаса */
   --color-rl-orange: #f5750f;
   --color-rl-red: #e2273c;
-  --color-rl-line: #2e2820;
 }
 
 /* Типографическая иерархия */
@@ -202,13 +203,13 @@ h1, h2, h3 {
 
 body {
   font-family: 'Inter', sans-serif;
-  color: #a1a1aa;
+  color: var(--color-rl-muted);
   line-height: 1.6;
 }
 
 .rl-display { font-family: 'Unbounded', sans-serif; text-transform: uppercase; letter-spacing: -0.02em; }
 .rl-mono { font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; letter-spacing: 0.12em; }
-.rl-body { font-family: 'Manrope', sans-serif; color: #a1a1aa; line-height: 1.6; }
+.rl-body { font-family: 'Manrope', sans-serif; color: var(--color-rl-muted); line-height: 1.6; }
 .rl-ring { position: absolute; border: 1px solid var(--color-rl-orange); border-radius: 9999px; opacity: 0.3; pointer-events:none; }
 .rl-ring { animation: rlSpin 50s linear infinite; }
 @keyframes rlSpin { to { transform: rotate(360deg); } }
