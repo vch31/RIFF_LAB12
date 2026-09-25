@@ -3,34 +3,88 @@ import type { ReactNode } from "react";
 import jetImg from '../assets/JET.png';
 
 import guitarTeacherImg from '../assets/teacher_riff.jpg';
-import drumsTeacherImg from '../assets/about_teacher_drum.png';
-import drumFront from '../assets/Drum_studio_front.png';
-import drumSide  from '../assets/Drum_studio_side.png';
-import drumMacro from '../assets/Drum_macro.png';
-import drumDividerImg from '../assets/drum_divider.png';
 import teacherDrumImg from '../assets/drum_teacher.png';
+import drumSide  from '../assets/Drum_studio_side.png';
+
 
 
 type Mode = "guitar" | "drums";
 
-function PriceRow({
-  n, unit, label, note, price, highlight, tone,
-}: { n: string; unit: string; label: string; note?: string; price: string; highlight?: boolean; tone: "orange" | "red" }) {
-  const accentBg = tone === "red" ? "bg-rl-red" : "bg-rl-orange";
-  const accentText = tone === "red" ? "text-rl-red" : "text-rl-orange";
+type SocialName = "instagram" | "telegram" | "tiktok";
+
+function SocialIcon({ name, className }: { name: SocialName; className?: string }) {
+  if (name === "instagram") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
+        <rect x="3" y="3" width="18" height="18" rx="5" />
+        <circle cx="12" cy="12" r="4.2" />
+        <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none" />
+      </svg>
+    );
+  }
+  if (name === "telegram") {
+    return (
+      <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+        <path d="M21.5 3.5 2.7 10.9c-1 .4-1 1.7.1 2l4.4 1.4 1.7 5.3c.2.7 1.1.9 1.6.3l2.5-2.7 4.6 3.4c.7.5 1.7.1 1.9-.7l3.4-15.4c.2-.9-.7-1.6-1.4-1z" />
+      </svg>
+    );
+  }
   return (
-    <div className={"flex items-center gap-3 sm:gap-5 px-4 sm:px-6 py-4 " + (highlight ? accentBg + " text-rl-bg" : "border-t border-rl-line")}>
-      <div className="flex items-baseline gap-1.5 shrink-0">
-        <span className="rl-display text-3xl sm:text-4xl leading-none">{n}</span>
-        <span className={"rl-mono text-[10px] " + (highlight ? "" : accentText)}>{unit}</span>
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M16.5 3c.3 1.9 1.5 3.4 3.5 3.8v2.7c-1.3 0-2.5-.4-3.5-1.1v6.6c0 3-2.4 5.4-5.4 5.4S5.7 18 5.7 15s2.4-5.4 5.4-5.4c.3 0 .6 0 .9.1v2.8a2.6 2.6 0 1 0 1.8 2.5V3h2.7z" />
+    </svg>
+  );
+}
+
+function PriceRow({
+  n, unit, label, note, price, save, highlight
+}: {
+  n: string; unit: string; label: string; note?: string;
+  price: string; save?: string; highlight?: boolean;
+}) {
+  const textColor = highlight ? "text-white" : "text-[#1A1A1A]";
+  const arrowColor = highlight ? "text-gray-500" : "text-[#1A1A1A]/40";
+
+  return (
+    <div
+      className={
+        "grid grid-cols-[auto_auto_1fr_auto_auto] items-center gap-3 sm:gap-6 px-4 sm:px-8 py-5 sm:py-6 transition-colors " +
+        (highlight ? "bg-[#1A1A1A]" : "bg-transparent border-t border-[#1A1A1A]/30")
+      }
+    >
+      {/* 1: Цифра и Единица */}
+      <div className={"flex items-baseline gap-2 shrink-0 w-16 sm:w-24 " + textColor}>
+        <span className="rl-display text-4xl sm:text-5xl font-black leading-none">{n}</span>
+        <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">{unit}</span>
       </div>
-      <span className={"rl-mono text-sm " + (highlight ? "opacity-60" : accentText)}>›</span>
-      <div className="flex-1 min-w-0">
-        <div className="text-sm leading-tight">{label}</div>
-        {note && <div className={"text-xs mt-0.5 " + (highlight ? "opacity-70" : "text-rl-muted")}>{note}</div>}
+
+      {/* Разделитель */}
+      <div className={arrowColor}>
+        <svg width="6" height="10" viewBox="0 0 6 10" fill="none"><path d="M1 1L5 5L1 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
       </div>
-      <span className={"rl-mono text-sm " + (highlight ? "opacity-60" : accentText)}>›</span>
-      <span className="rl-mono text-base sm:text-lg font-bold shrink-0">{price}</span>
+
+      {/* 2: Название и Описание */}
+      <div className={"flex flex-col justify-center leading-tight " + textColor}>
+        <span className="text-xs sm:text-sm font-bold uppercase tracking-widest">{label}</span>
+        {note && <span className="text-xs sm:text-sm font-black uppercase tracking-widest">{note}</span>}
+      </div>
+
+      {/* Разделитель */}
+      <div className={arrowColor}>
+        <svg width="6" height="10" viewBox="0 0 6 10" fill="none"><path d="M1 1L5 5L1 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </div>
+
+      {/* 3: Цена и Экономия */}
+      <div className="text-right shrink-0">
+        <div className={"text-sm sm:text-base font-bold " + (highlight ? "text-[#4DB8FF]" : textColor)}>
+          {price}
+        </div>
+        {save && (
+          <div className={"text-[10px] sm:text-xs mt-1 font-medium " + textColor}>
+            Вы экономите {save}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -62,11 +116,13 @@ function TeacherPass({
   role,
   tone,
   fields,
+  color = false,
 }: {
   photo: string;
   role: string;
   tone: "orange" | "red";
   fields: [string, string][];
+  color?: boolean;
 }) {
   const border = tone === "red" ? "border-rl-red" : "border-rl-orange";
   const text = tone === "red" ? "text-rl-red" : "text-rl-orange";
@@ -75,7 +131,11 @@ function TeacherPass({
       <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-rl-bg border-2 border-rl-line z-10" />
       <div className="rounded-2xl overflow-hidden bg-rl-card">
         <div className="aspect-[3/4] relative">
-          <img src={photo} alt={role} className="w-full h-full object-cover grayscale" />
+          <img
+            src={photo}
+            alt={role}
+            className={"w-full h-full object-cover " + (color ? "" : "grayscale")}
+          />
           <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-rl-card to-transparent" />
         </div>
         <div className="p-5">
@@ -355,9 +415,14 @@ function Pill({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void }) {
   );
 }
 
-const SOCIALS: Array<[string, string]> = [
-  ["riff_lab12", "https://www.instagram.com/riff_lab12"],
-  ["drum_lab12", "https://www.instagram.com/drum_lab12"],
+// Сгруппировано по бренду (не по платформе), чтобы два значка Instagram
+// не стояли подряд без объяснения — Riff и Drum разнесены и у каждого
+// свой фирменный цвет вместо общего hover от текущего режима.
+const SOCIAL_LINKS: Array<{ icon: SocialName; label: string; href: string; tone: "orange" | "red" }> = [
+  { icon: "instagram", label: "Instagram Riff Lab12", href: "https://www.instagram.com/riff_lab12", tone: "orange" },
+  { icon: "telegram", label: "Telegram @riff_arina", href: "https://t.me/riff_arina", tone: "orange" },
+  { icon: "instagram", label: "Instagram Drum Lab12", href: "https://www.instagram.com/drum_lab12", tone: "red" },
+  { icon: "tiktok", label: "TikTok @drum_lab12", href: "https://www.tiktok.com/@drum_lab12", tone: "red" },
 ];
 
 export default function Landing() {
@@ -644,8 +709,7 @@ export default function Landing() {
                     </div>
                   </div>
 
-                  <div className="relative rounded-3xl bg-rl-card border border-rl-line p-8 flex items-center justify-center overflow-hidden min-h-[450px] group">
-                    <div className="absolute inset-0 opacity-10 bg-[radial-gradient(var(--color-rl-red)_1px,transparent_1px)] [background-size:16px_16px]"></div>
+                  <div className="relative flex items-center justify-center overflow-hidden min-h-[450px] group">
                     <img
                       src={drumSide}
                       alt="Ударная установка Pearl Roadshow"
@@ -695,6 +759,7 @@ export default function Landing() {
           photo={guitarTeacherImg}
           role="RIFF LAB12"
           tone="orange"
+          color
           fields={[
             ["Опыт", "Преподаю с 20XX года"], // Замени на реальный год Арины
             ["Образование", "X"], // Замени на образование Арины
@@ -719,6 +784,7 @@ export default function Landing() {
           photo={teacherDrumImg}
           role="DRUM LAB12"
           tone="red"
+          color
           fields={[
             ["Опыт", "Преподаю с 2018 года"],
             ["Образование", "ГГКИ (Искусство эстрады)"],
@@ -742,34 +808,61 @@ export default function Landing() {
 </section>
 
 
-<section id="pricing" className="bg-rl-panel border-y border-rl-line py-24 px-6">
-  <Reveal className="max-w-xl mx-auto">
-    <Kicker tone={tone}>Прайс</Kicker>
-    <h2 className="rl-display text-4xl sm:text-5xl leading-[0.95]">{g ? "GUITAR" : "DRUM"}</h2>
-    <h2 className="rl-display text-4xl sm:text-5xl mb-4">LESSONS</h2>
-    <p className="rl-mono text-xs text-rl-muted mb-8">Абонементы на 1 месяц обучения</p>
+<section id="pricing" className={"relative py-28 px-6 overflow-hidden transition-colors duration-700 " + (g ? "bg-[#FF7A00]" : "bg-[#E63946]")}>
+  {/* Декоративные линии фона (струны) */}
+  <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-30 z-0">
+    <svg className="absolute w-[150%] sm:w-full h-[150%] sm:h-full left-[-25%] sm:left-0 top-[-25%] sm:top-0" viewBox="0 0 1000 800" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+      <path d="M-100 400 C 300 -100, 700 900, 1100 400" stroke="#1A1A1A" strokeWidth="1" />
+      <path d="M-100 500 C 400 0, 600 1000, 1100 500" stroke="#1A1A1A" strokeWidth="1" />
+      <path d="M-100 300 C 200 800, 800 0, 1100 300" stroke="#1A1A1A" strokeWidth="1" />
+    </svg>
+  </div>
 
-    <div className="rounded-2xl border border-rl-line overflow-hidden">
+  <Reveal className="max-w-3xl mx-auto relative z-10 flex flex-col items-center">
+    {/* Инструмент над заголовком (в потоке, с отрицательным отступом) */}
+    <div className="w-[130%] sm:w-[95%] max-w-[850px] pointer-events-none z-10 drop-shadow-[0_20px_30px_rgba(0,0,0,0.4)] -mb-10 sm:-mb-24">
+      <img
+        src={g ? jetImg : drumSide}
+        alt={g ? "Guitar" : "Drums"}
+        className={"w-full h-auto object-contain transform " + (g ? "-rotate-[75deg]" : "")} 
+      />
+    </div>
+
+    {/* Заголовок */}
+    <div className="text-center mb-10 relative z-0">
+      <h2 className="rl-display text-[3.5rem] sm:text-[6rem] leading-[0.85] text-[#1A1A1A] font-black uppercase tracking-tighter">
+        {g ? "Guitar" : "Drum"}
+        <br />
+        Lessons
+      </h2>
+      <p className="text-[#1A1A1A] text-xs sm:text-sm font-bold uppercase tracking-widest mt-6 mb-2">
+        Абонементы на 1 месяц обучения
+      </p>
+    </div>
+
+    {/* Таблица цен */}
+    <div className="border border-[#1A1A1A]/30 bg-transparent flex flex-col w-full relative z-20">
       {g ? (
         <>
-          <PriceRow n="1" unit="ЧАС" label="ПРОБНОЕ" note="РАЗОВОЕ" price="55 р." highlight tone="orange" />
-          <PriceRow n="4" unit="ЧАСА" label="ОДИН РАЗ" note="В НЕДЕЛЮ" price="200 р./мес" tone="orange" />
-          <PriceRow n="8" unit="ЧАСОВ" label="ДВА РАЗА" note="В НЕДЕЛЮ" price="380 р./мес" tone="orange" />
+          <PriceRow n="1" unit="ЧАС" label="ПРОБНОЕ" note="РАЗОВОЕ" price="55р." highlight />
+          <PriceRow n="4" unit="ЧАСА" label="ОДИН РАЗ" note="В НЕДЕЛЮ" price="200р. в месяц" save="20р." />
+          <PriceRow n="8" unit="ЧАСОВ" label="ДВА РАЗА" note="В НЕДЕЛЮ" price="380р. в месяц" save="60р." />
         </>
       ) : (
         <>
-          <PriceRow n="1" unit="ЧАС" label="РАЗОВОЕ" note="ПРОБНОЕ" price="50 р." highlight tone="red" />
-          <PriceRow n="4" unit="ЧАСА" label="ОДИН РАЗ" note="В НЕДЕЛЮ" price="180 р./мес" tone="red" />
-          <PriceRow n="8" unit="ЧАСОВ" label="ДВА РАЗА" note="В НЕДЕЛЮ" price="340 р./мес" tone="red" />
+          <PriceRow n="1" unit="ЧАС" label="РАЗОВОЕ" note="ПРОБНОЕ" price="50р." highlight />
+          <PriceRow n="4" unit="ЧАСА" label="ОДИН РАЗ" note="В НЕДЕЛЮ" price="180р. в месяц" save="20р." />
+          <PriceRow n="8" unit="ЧАСОВ" label="ДВА РАЗА" note="В НЕДЕЛЮ" price="340р. в месяц" save="60р." />
         </>
       )}
     </div>
 
-    <p className="text-xs text-rl-muted mt-4">*Длительность одного занятия — 60 минут.</p>
-    <p className="text-xs text-rl-muted mt-6 text-center">Точные слоты — в директ Instagram или Telegram.</p>
+    <p className="text-xs text-[#1A1A1A] font-medium mt-6 text-center tracking-wide relative z-20">
+      Время одного занятия = 60 минут
+    </p>
   </Reveal>
 </section>
-
+      
       <section id="contact" className="max-w-4xl mx-auto px-6 py-24 text-center">
         <Reveal>
           <Kicker tone={tone}>Гродно, Беларусь</Kicker>
@@ -782,29 +875,31 @@ export default function Landing() {
               Instagram @{igHandle}
             </CTA>
           </div>
-          <p className="rl-mono text-xs text-rl-muted">
-            {SOCIALS.map(([h, u], i) => (
-              <span key={h}>
-                {i > 0 && " · "}
-                <a href={u} target="_blank" rel="noopener noreferrer" className="hover:text-rl-ink">
-                  instagram @{h}
+          <p className="rl-mono text-xs text-rl-muted mb-3">
+            <span className="text-rl-orange">Riff Lab12</span>
+            {"  ·  "}
+            <span className="text-rl-red">Drum Lab12</span>
+          </p>
+          <div className="flex gap-6 justify-center items-center">
+            {SOCIAL_LINKS.map((s, i) => (
+              <span key={s.href} className="flex items-center gap-6">
+                {i === 2 && <span className="w-px h-6 bg-rl-line" aria-hidden="true" />}
+                <a
+                  href={s.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={s.label}
+                  title={s.label}
+                  className={
+                    "text-rl-muted transition-colors " +
+                    (s.tone === "orange" ? "hover:text-rl-orange" : "hover:text-rl-red")
+                  }
+                >
+                  <SocialIcon name={s.icon} className="w-7 h-7" />
                 </a>
               </span>
             ))}
-            {" · "}
-            <a href="https://t.me/riff_arina" target="_blank" rel="noopener noreferrer" className="hover:text-rl-ink">
-              telegram @riff_arina
-            </a>
-            {" · "}
-            <a
-              href="https://www.tiktok.com/@drum_lab12"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-rl-ink"
-            >
-              tiktok @drum_lab12
-            </a>
-          </p>
+          </div>
         </Reveal>
       </section>
 
