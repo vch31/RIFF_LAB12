@@ -125,6 +125,45 @@ function Reveal({ children, className = "" }: { children: ReactNode; className?:
   );
 }
 
+/**
+ * Отслеживает, насколько секция прошла через центр экрана, и возвращает
+ * прогресс -1..1 (−1 когда элемент ещё внизу экрана, 0 в центре, +1 когда
+ * уже выше центра). Используется для лёгкого 3D-поворота/параллакса
+ * картинки при скролле, без завязки на общий scrollY страницы.
+ */
+function useScrollTilt(range = 0.7) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) return;
+
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const rect = el.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const centerOffset = rect.top + rect.height / 2 - vh / 2;
+      const p = centerOffset / (vh * range);
+      setProgress(Math.max(-1, Math.min(1, p)));
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [range]);
+  return { ref, progress };
+}
+
 const GUITAR_PROGRAM = [
   {
     title: "Постановка базы",
@@ -305,6 +344,7 @@ export default function Landing() {
   const [mode, setMode] = useState<Mode>("guitar");
   const [showCta, setShowCta] = useState(false);
   const g = mode === "guitar";
+  const { ref: guitarTiltRef, progress: guitarTilt } = useScrollTilt();
 
   useEffect(() => {
     const onScroll = () => {
@@ -504,13 +544,22 @@ export default function Landing() {
                   </div>
                 </div>
 
-                <div className="relative rounded-3xl bg-rl-card border border-rl-line p-8 flex items-center justify-center overflow-hidden min-h-[450px] group">
-                  <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ff5500_1px,transparent_1px)] [background-size:16px_16px]"></div>
-
+                <div
+                  ref={guitarTiltRef}
+                  className="relative flex items-center justify-center min-h-[380px] sm:min-h-[520px] lg:min-h-[560px]"
+                >
                   <img
                     src={jetImg}
                     alt="Электрогитара Jet в студии Riff Lab12"
-                    className="relative z-10 max-h-[420px] w-auto object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.8)] transition-transform duration-700 group-hover:scale-105 group-hover:rotate-1"
+                    className="relative z-10 max-h-[400px] sm:max-h-[560px] lg:max-h-[620px] w-auto object-contain drop-shadow-[0_30px_70px_rgba(0,0,0,0.85)] transition-transform duration-300 ease-out will-change-transform"
+                    style={{
+                      transform:
+                        `scale(1.35) ` +
+                        `translateX(${8 + guitarTilt * 10}%) ` +
+                        `rotateY(${guitarTilt * -22}deg) ` +
+                        `rotateX(${guitarTilt * 6}deg) ` +
+                        `translateY(${guitarTilt * -18}px)`,
+                    }}
                   />
                 </div>
               </div>
@@ -628,9 +677,9 @@ export default function Landing() {
           tone="orange"
           fields={[
             ["Опыт", "Преподаю с 20XX года"], // Замени на реальный год Арины
-            ["Образование", "Музыкальное (уточнить)"], // Замени на образование Арины
+            ["Образование", "X"], // Замени на образование Арины
             ["Стаж", "На гитаре с XX лет"], // Замени на возраст/стаж
-            ["Проекты", "Сессионный музыкант"], // Замени на проекты Арины
+            ["Проекты", "X"], // Замени на проекты Арины
           ]}
         />
         <div>
@@ -638,10 +687,7 @@ export default function Landing() {
           <p className="rl-display text-3xl md:text-4xl leading-tight mb-6">
             «Гитара — честная конкуренция со стрессом»
           </p>
-          <p className="text-sm md:text-base text-rl-muted leading-relaxed mb-8 max-w-md">
-            Индивидуальные занятия на электро и акустической гитаре для взрослых и детей, уровень
-            с нуля. Записаться — Telegram @riff_arina или директ Instagram.
-          </p>
+
           <CTA href="https://t.me/riff_arina" ext tone="orange">
             Записаться к преподавателю
           </CTA>
@@ -665,10 +711,7 @@ export default function Landing() {
           <p className="rl-display text-3xl md:text-4xl leading-tight mb-6">
             «Успех случается с теми, кто пробует»
           </p>
-          <p className="text-sm md:text-base text-rl-muted leading-relaxed mb-8 max-w-md">
-            Индивидуальные занятия на ударной установке для взрослых и детей, уровень с нуля.
-            Записаться — директ Instagram или Telegram.
-          </p>
+
           <CTA href={igUrl} ext tone="red">
             Записаться к преподавателю
           </CTA>
