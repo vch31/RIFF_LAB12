@@ -534,23 +534,53 @@ export default function Landing() {
                   </div>
                 </div>
 
-                <div id="drum-equipment" className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch scroll-mt-24">
-                  <div className="rounded-2xl bg-rl-card border border-rl-line p-8 flex flex-col justify-center">
-                    <div className="rl-mono text-xs text-rl-red mb-2">Инструмент студии</div>
-                    <div className="rl-display text-2xl mb-1">Pearl Roadshow + Arborea</div>
-                    <p className="text-sm text-rl-muted">Полная установка, готова к игре с первой минуты</p>
-                    <div className="rl-mono text-xs text-rl-red mt-6 mb-2">Тарелки</div>
-                    <div className="rl-display text-2xl mb-1">Paiste Color Sound 900</div>
-                    <p className="text-sm text-rl-muted">Свои тарелки возить не нужно</p>
-                    <div className="rl-mono text-xs text-rl-red mt-6 mb-2">Аренда Drum Room</div>
-                    <p className="text-sm text-rl-muted">1ч — 20 р · 2ч — 40 р · 4ч — 80 р</p>
+                <div id="drum-equipment" className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center scroll-mt-24 py-12">
+                  <div className="flex flex-col justify-center">
+                    <div className="rl-mono text-xs text-rl-red mb-3 tracking-widest uppercase">Студийный сетап</div>
+                    <h2 className="rl-display text-3xl sm:text-4xl mb-10">Всё готово для игры с первой минуты</h2>
+
+                    <div className="space-y-8">
+                      <div className="flex gap-6 items-start">
+                        <span className="rl-display text-4xl text-rl-muted/40">01</span>
+                        <div>
+                          <div className="rl-mono text-xs text-rl-red mb-1">ИНСТРУМЕНТ</div>
+                          <h3 className="rl-display text-xl mb-2">Pearl Roadshow + Arborea</h3>
+                          <p className="text-sm text-rl-muted leading-relaxed">
+                            Полная установка, готова к игре с первой минуты.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-6 items-start">
+                        <span className="rl-display text-4xl text-rl-muted/40">02</span>
+                        <div>
+                          <div className="rl-mono text-xs text-rl-red mb-1">ТАРЕЛКИ</div>
+                          <h3 className="rl-display text-xl mb-2">Paiste Color Sound 900</h3>
+                          <p className="text-sm text-rl-muted leading-relaxed">
+                            Свои тарелки возить не нужно.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-6 items-start">
+                        <span className="rl-display text-4xl text-rl-muted/40">03</span>
+                        <div>
+                          <div className="rl-mono text-xs text-rl-red mb-1">АРЕНДА DRUM ROOM</div>
+                          <h3 className="rl-display text-xl mb-2">Почасовая аренда</h3>
+                          <p className="text-sm text-rl-muted leading-relaxed">
+                            1ч — 20 р · 2ч — 40 р · 4ч — 80 р
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="relative rounded-2xl bg-rl-card border border-rl-line overflow-hidden min-h-[350px] lg:min-h-[100%] flex items-center justify-center p-3">
+                  <div className="relative rounded-3xl bg-rl-card border border-rl-line p-8 flex items-center justify-center overflow-hidden min-h-[450px] group">
+                    <div className="absolute inset-0 opacity-10 bg-[radial-gradient(var(--color-rl-red)_1px,transparent_1px)] [background-size:16px_16px]"></div>
                     <img
                       src={drumSide}
                       alt="Ударная установка Pearl Roadshow"
-                      className="w-full h-full object-cover rounded-xl"
+                      className="relative z-10 max-h-[420px] w-auto object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.8)] transition-transform duration-700 group-hover:scale-105 group-hover:-rotate-1"
                     />
                   </div>
                 </div>
