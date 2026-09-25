@@ -10,16 +10,10 @@ import drumMacro from '../assets/Drum_macro.png';
 import drumDividerImg from '../assets/drum_divider.png';
 import teacherDrumImg from '../assets/drum_teacher.png';
 
+
 type Mode = "guitar" | "drums";
 
-function LiveLoveDrum() {
-  return (
-    <section className="relative h-56 md:h-72 overflow-hidden">
-      <img src={drumDividerImg} alt="Live Love Drum" className="absolute inset-0 w-full h-full object-cover" />
-      <div className="absolute inset-0 bg-rl-bg/25" />
-    </section>
-  );
-}
+
 
 function GuitarIcon({ className }: { className?: string }) {
   return (
@@ -344,7 +338,7 @@ export default function Landing() {
   ];
   return (
     <main className="rl-body bg-rl-bg text-rl-ink overflow-x-hidden">
-    <header className={"fixed top-0 inset-x-0 z-50 backdrop-blur bg-rl-bg/80 border-b h-11 md:h-16 overflow-hidden " + (g ? "border-rl-line" : "border-rl-red/30")}>
+      <header className="fixed top-0 inset-x-0 z-50 backdrop-blur bg-rl-bg/80 border-b border-rl-line h-11 md:h-16 overflow-hidden">
       <div className="max-w-6xl mx-auto px-4 md:px-8 h-full flex items-center justify-between gap-3">
 
         {/* Лого: на мобильных — только активный бренд, на ПК — всегда оба */}
@@ -386,7 +380,7 @@ export default function Landing() {
         <div className="rl-ring w-[520px] h-[520px] -top-40 -right-40" style={{ borderColor: g ? "var(--color-rl-orange)" : "var(--color-rl-red)" }} />
         <div
           className="rl-ring w-[320px] h-[320px] top-20 -right-10"
-          style={{ borderColor: "var(--color-rl-red)" }}
+          style={{ borderColor: g ? "var(--color-rl-orange)" : "var(--color-rl-red)" }}
         />
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <Kicker tone={tone}>Гродно · Студия гитары и ударных</Kicker>
@@ -408,7 +402,7 @@ export default function Landing() {
               <CTA href="#contact" tone={tone} className="text-center">
                 Записаться на пробное
               </CTA>
-              <CTA href="#programs" ghost className="text-center">
+              <CTA href="#programs" ghost tone={tone} className="text-center">
                 Смотреть программу
               </CTA>
             </div>
@@ -528,11 +522,7 @@ export default function Landing() {
             <Reveal>
               <div id="drums" className="scroll-mt-24">
                 <div className="relative mb-16">
-                  <img
-                    src={teacherDrumImg}
-                    className="absolute -top-10 right-0 w-64 opacity-[0.06] pointer-events-none select-none hidden lg:block"
-                    alt=""
-                  />
+
                   <div className="relative">
                     <Kicker tone="red">Drum Lab12 · Ударные</Kicker>
                     <h2 className="rl-display text-4xl mb-4">Не просто бить в барабаны</h2>
@@ -658,7 +648,7 @@ export default function Landing() {
   </Reveal>
 </section>
 
-{!g && <LiveLoveDrum />}
+
       <section id="pricing" className="bg-rl-panel border-y border-rl-line py-24 px-6">
         <Reveal className="max-w-md mx-auto">
           <Kicker tone={tone}>Цены</Kicker>
@@ -698,7 +688,7 @@ export default function Landing() {
             <CTA href={igUrl} ext tone={tone}>
               Написать в директ
             </CTA>
-            <CTA href={igUrl} ext ghost>
+            <CTA href={igUrl} ext ghost tone={tone}>
               Instagram @{igHandle}
             </CTA>
           </div>
