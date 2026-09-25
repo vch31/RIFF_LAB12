@@ -13,7 +13,27 @@ import teacherDrumImg from '../assets/drum_teacher.png';
 
 type Mode = "guitar" | "drums";
 
-
+function PriceRow({
+  n, unit, label, note, price, highlight, tone,
+}: { n: string; unit: string; label: string; note?: string; price: string; highlight?: boolean; tone: "orange" | "red" }) {
+  const accentBg = tone === "red" ? "bg-rl-red" : "bg-rl-orange";
+  const accentText = tone === "red" ? "text-rl-red" : "text-rl-orange";
+  return (
+    <div className={"flex items-center gap-3 sm:gap-5 px-4 sm:px-6 py-4 " + (highlight ? accentBg + " text-rl-bg" : "border-t border-rl-line")}>
+      <div className="flex items-baseline gap-1.5 shrink-0">
+        <span className="rl-display text-3xl sm:text-4xl leading-none">{n}</span>
+        <span className={"rl-mono text-[10px] " + (highlight ? "" : accentText)}>{unit}</span>
+      </div>
+      <span className={"rl-mono text-sm " + (highlight ? "opacity-60" : accentText)}>›</span>
+      <div className="flex-1 min-w-0">
+        <div className="text-sm leading-tight">{label}</div>
+        {note && <div className={"text-xs mt-0.5 " + (highlight ? "opacity-70" : "text-rl-muted")}>{note}</div>}
+      </div>
+      <span className={"rl-mono text-sm " + (highlight ? "opacity-60" : accentText)}>›</span>
+      <span className="rl-mono text-base sm:text-lg font-bold shrink-0">{price}</span>
+    </div>
+  );
+}
 
 function GuitarIcon({ className }: { className?: string }) {
   return (
@@ -373,7 +393,7 @@ export default function Landing() {
     ["#programs", "Программа"],
     [eqHref, "Оборудование"],
     ["#team", "Преподаватель"],
-    ["#pricing", "Цены"],
+    ["#pricing", "Прайс"],
     ["#contact", "Контакты"],
   ];
   return (
@@ -722,36 +742,33 @@ export default function Landing() {
 </section>
 
 
-      <section id="pricing" className="bg-rl-panel border-y border-rl-line py-24 px-6">
-        <Reveal className="max-w-md mx-auto">
-          <Kicker tone={tone}>Цены</Kicker>
-          <h2 className="rl-display text-2xl sm:text-3xl md:text-4xl mb-10">Абонемент на 1 месяц</h2>
-          <div className={"rounded-2xl border p-8 " + (g ? "border-rl-orange" : "border-rl-red")}>
-            <div className="rl-display text-2xl mb-4">{g ? "Guitar Lessons" : "Drum Lessons"}</div>
-            {(g
-              ? [
-                  ["1 час · пробное", "55 р."],
-                  ["4ч/мес · 1х в неделю", "200 р./мес"],
-                  ["8ч/мес · 2х в неделю", "380 р./мес"],
-                ]
-              : [
-                  ["1 час · пробное", "50 р."],
-                  ["4ч/мес · 1х в неделю", "180 р./мес"],
-                  ["8ч/мес · 2х в неделю", "340 р./мес"],
-                ]
-            ).map(([a, b]) => (
-              <div key={a} className="flex justify-between py-3 border-t border-rl-line text-sm">
-                <span className="text-rl-muted">{a}</span>
-                <span className="rl-mono">{b}</span>
-              </div>
-            ))}
-            <p className="text-xs text-rl-muted mt-4">Занятие = 60 минут, индивидуально.</p>
-          </div>
-          <p className="text-xs text-rl-muted mt-6 text-center">
-            Точные слоты — в директ Instagram или Telegram.
-          </p>
-        </Reveal>
-      </section>
+<section id="pricing" className="bg-rl-panel border-y border-rl-line py-24 px-6">
+  <Reveal className="max-w-xl mx-auto">
+    <Kicker tone={tone}>Прайс</Kicker>
+    <h2 className="rl-display text-4xl sm:text-5xl leading-[0.95]">{g ? "GUITAR" : "DRUM"}</h2>
+    <h2 className="rl-display text-4xl sm:text-5xl mb-4">LESSONS</h2>
+    <p className="rl-mono text-xs text-rl-muted mb-8">Абонементы на 1 месяц обучения</p>
+
+    <div className="rounded-2xl border border-rl-line overflow-hidden">
+      {g ? (
+        <>
+          <PriceRow n="1" unit="ЧАС" label="ПРОБНОЕ" note="РАЗОВОЕ" price="55 р." highlight tone="orange" />
+          <PriceRow n="4" unit="ЧАСА" label="ОДИН РАЗ" note="В НЕДЕЛЮ" price="200 р./мес" tone="orange" />
+          <PriceRow n="8" unit="ЧАСОВ" label="ДВА РАЗА" note="В НЕДЕЛЮ" price="380 р./мес" tone="orange" />
+        </>
+      ) : (
+        <>
+          <PriceRow n="1" unit="ЧАС" label="РАЗОВОЕ" note="ПРОБНОЕ" price="50 р." highlight tone="red" />
+          <PriceRow n="4" unit="ЧАСА" label="ОДИН РАЗ" note="В НЕДЕЛЮ" price="180 р./мес" tone="red" />
+          <PriceRow n="8" unit="ЧАСОВ" label="ДВА РАЗА" note="В НЕДЕЛЮ" price="340 р./мес" tone="red" />
+        </>
+      )}
+    </div>
+
+    <p className="text-xs text-rl-muted mt-4">*Длительность одного занятия — 60 минут.</p>
+    <p className="text-xs text-rl-muted mt-6 text-center">Точные слоты — в директ Instagram или Telegram.</p>
+  </Reveal>
+</section>
 
       <section id="contact" className="max-w-4xl mx-auto px-6 py-24 text-center">
         <Reveal>
