@@ -1,15 +1,12 @@
 import { forwardRef, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import jetImg from '../assets/JET.png';
-
 import guitarTeacherImg from '../assets/teacher_riff.jpg';
 import teacherDrumImg from '../assets/drum_teacher.png';
 import drumSide  from '../assets/Drum_studio_side.png';
-
-
+import drumPng from '../assets/drum_png.png'
 
 type Mode = "guitar" | "drums";
-
 type SocialName = "instagram" | "telegram" | "tiktok";
 
 function SocialIcon({ name, className }: { name: SocialName; className?: string }) {
@@ -74,8 +71,8 @@ function PriceRow({
         <svg width="6" height="10" viewBox="0 0 6 10" fill="none"><path d="M1 1L5 5L1 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
       </div>
 
-      {/* 3: Цена и Экономия */}
-      <div className="text-right shrink-0">
+      {/* 3: Цена и Экономия (Теперь текст выровнен по левому краю с фиксированной шириной) */}
+      <div className="shrink-0 w-[100px] sm:w-[130px] text-left">
         <div className={"text-sm sm:text-base font-bold " + (highlight ? "text-[#4DB8FF]" : textColor)}>
           {price}
         </div>
@@ -711,10 +708,7 @@ export default function Landing() {
               Приходите в студию со свежей головой, а не с тяжёлым чехлом!<br />
               Инструменты для наших учеников уже в студии.
             </p>
-          <p className="rl-mono text-sm mt-5 sm:mt-8 mb-3 sm:mb-4 tracking-widest">
-            <span className="text-rl-orange">Выбери,</span>{" "}
-            <span className="text-rl-red">с чего начать</span>
-          </p>
+
           <Picker mode={mode} setMode={setMode} />
             <div className="grid grid-cols-2 gap-3 sm:gap-4 max-w-xl mx-auto">
               <CTA href="#contact" tone={tone} className="text-center">
@@ -1009,10 +1003,10 @@ export default function Landing() {
 
 <section
   id="pricing"
-className={
-  "relative pt-8 sm:pt-12 pb-24 px-6 overflow-visible transition-colors duration-700 " +
-  (g ? "bg-[#FF7A00]" : "bg-[#E63946]")
-}
+  className={
+    "relative pt-8 sm:pt-12 pb-24 px-6 overflow-visible transition-colors duration-700 " +
+    (g ? "bg-[#FF7A00]" : "bg-[#E63946]")
+  }
 >
   {/* Декоративные линии фона (струны) */}
   <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-30 z-0">
@@ -1040,7 +1034,7 @@ className={
       }
     >
       <img
-        src={g ? jetImg : drumSide}
+        src={g ? jetImg : drumPng}
         alt={g ? "Guitar" : "Drums"}
         className={
           "w-full h-auto object-contain transform " +
@@ -1066,6 +1060,7 @@ className={
     <div className="border border-[#1A1A1A]/30 bg-transparent flex flex-col w-full relative z-20">
       {g ? (
         <>
+          {/* Вернули highlight для пробного */}
           <PriceRow
             n="1"
             unit="ЧАС"
@@ -1090,9 +1085,42 @@ className={
             price="380р. в месяц"
             save="60р."
           />
+          
+          {/* Блок самостоятельной практики на электрогитаре */}
+          <div className="bg-[#1A1A1A]/5 border-t border-[#1A1A1A]/30 p-6 sm:p-8 flex flex-col gap-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h3 className="rl-display text-2xl sm:text-3xl text-[#1A1A1A] font-black uppercase tracking-tight">Самостоятельная практика</h3>
+                <p className="text-[#1A1A1A] text-xs font-bold uppercase tracking-widest mt-1">На электрогитаре в студии</p>
+              </div>
+              <div className="flex items-baseline gap-2 shrink-0">
+                <span className="rl-display text-4xl sm:text-5xl font-black text-[#1A1A1A]">15<span className="text-2xl">р.</span></span>
+                <span className="text-sm font-bold uppercase tracking-wider text-[#1A1A1A]/80">/ 60 мин</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
+              <div className="border-l-2 border-[#1A1A1A]/40 pl-4">
+                <p className="text-xs font-black text-[#1A1A1A] uppercase tracking-wider mb-2">Доступное время (Every Week):</p>
+                <ul className="text-xs text-[#1A1A1A] font-medium space-y-1.5">
+                  <li><span className="font-bold">Среда:</span> 09:00 – 20:00</li>
+                  <li><span className="font-bold">Остальные дни:</span> 09:00 – 13:00</li>
+                </ul>
+              </div>
+              <div className="border-l-2 border-[#1A1A1A]/40 pl-4 flex flex-col justify-center">
+                <p className="text-xs text-[#1A1A1A] font-black uppercase tracking-wider mb-1">* Только для учеников студии</p>
+                <p className="text-xs text-[#1A1A1A]/80 font-medium">Один или два раза в неделю — оптимально для результата!</p>
+              </div>
+            </div>
+            
+            <a href="#contact" className="mt-2 w-full sm:w-auto self-start border border-[#1A1A1A] text-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-[#FF7A00] transition-colors rl-mono text-xs px-6 py-3 rounded-full uppercase tracking-wider text-center">
+              Запись в директ
+            </a>
+          </div>
         </>
       ) : (
         <>
+          {/* Вернули highlight для пробного */}
           <PriceRow
             n="1"
             unit="ЧАС"
@@ -1117,6 +1145,49 @@ className={
             price="340р. в месяц"
             save="60р."
           />
+
+          {/* Блок DRUM ROOM */}
+          <div className="bg-[#1A1A1A]/5 border-t border-[#1A1A1A]/30 p-6 sm:p-8 flex flex-col gap-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h3 className="rl-display text-2xl sm:text-3xl text-[#1A1A1A] font-black uppercase tracking-tight">DRUM ROOM</h3>
+                <p className="text-[#1A1A1A] text-xs font-bold uppercase tracking-widest mt-1">Практика / Ударная установка + тарелки</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col w-full border-t border-[#1A1A1A]/30 mt-2">
+               <PriceRow
+                  n="1"
+                  unit="ЧАС"
+                  label="ОДИН РАЗ"
+                  note="В НЕДЕЛЮ"
+                  price="15р."
+                />
+                 <PriceRow
+                  n="2"
+                  unit="ЧАСА"
+                  label="ОДИН РАЗ"
+                  note="В НЕДЕЛЮ"
+                  price="20р."
+                />
+                 <PriceRow
+                  n="4"
+                  unit="ЧАСА"
+                  label="ДВА РАЗА"
+                  note="В НЕДЕЛЮ"
+                  price="30р."
+                />
+            </div>
+
+            <div className="border-l-2 border-[#1A1A1A]/40 pl-4 mt-2">
+              <p className="text-xs text-[#1A1A1A] font-black uppercase tracking-wider mb-1">* Услуга только для учеников студии!</p>
+               <p className="text-xs text-[#1A1A1A]/80 font-medium uppercase">Включает установку и тарелки</p>
+            </div>
+            
+            <a href="#contact" className="mt-2 w-full sm:w-auto self-start border border-[#1A1A1A] text-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-[#E63946] transition-colors rl-mono text-xs px-6 py-3 rounded-full uppercase tracking-wider text-center">
+              Запись в директ
+            </a>
+          </div>
         </>
       )}
     </div>
