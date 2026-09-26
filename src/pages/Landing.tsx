@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import jetImg from '../assets/JET.png';
 
@@ -282,38 +282,229 @@ const DRUM_PROGRAM = [
     items: ["Заполнения (филлы)", "Динамика и грув", "Разбор песен", "Игра под трек", "Практика всех изученных навыков"],
   },
 ];
+const ProgramStep = forwardRef<
+  HTMLDivElement,
+  {
+    index: number;
+    total: number;
+    group: { title: string; items: string[] };
+    tone: "orange" | "red";
+    isOpen: boolean;
+    isPassed: boolean;
+    onToggle: () => void;
+  }
+>(function ProgramStep({ index, total, group, tone, isOpen, isPassed, onToggle }, ref) {
+  const accentBg = tone === "red" ? "bg-rl-red" : "bg-rl-orange";
+  const accentText = tone === "red" ? "text-rl-red" : "text-rl-orange";
+  
+  // Добавляем блик (светлая внутренняя тень) на "раскаленный металл"
+  const accentGlow = tone === "red" 
+    ? "shadow-[0_0_15px_rgba(230,57,70,0.6),inset_0_2px_4px_rgba(255,255,255,0.3)]" 
+    : "shadow-[0_0_15px_rgba(255,122,0,0.6),inset_0_2px_4px_rgba(255,255,255,0.3)]";
+  
+  const isLast = index === total - 1;
+  const isReached = isOpen || isPassed;
+  const lineFilled = isPassed;
+
+  return (
+    <div ref={ref} className="flex gap-4 scroll-mt-20 md:scroll-mt-28 group/step">
+      {/* Степ-индикатор: Эстетика гранж-заклепок (Studs) */}
+      <div className="flex flex-col items-center pt-1.5">
+        <div className="relative">
+          <span
+            className={
+              // Используем rl-display для акцентных широких шрифтов (Monument / Druk / Unbounded)
+              "relative z-10 shrink-0 w-11 h-11 rounded-full flex items-center justify-center rl-display text-[15px] border transition-all duration-500 ease-out " +
+              (isReached
+                ? accentBg + " border-transparent text-rl-bg scale-110 " + accentGlow
+                : "bg-gradient-to-br from-[#2A2A2A] to-[#111] border-[#333] text-[#666] shadow-[inset_0_3px_6px_rgba(0,0,0,0.8),0_1px_1px_rgba(255,255,255,0.05)] group-hover/step:text-[#888]")
+            }
+          >
+            {String(index + 1).padStart(2, "0")}
+          </span>
+          {/* Пульсирующая "неоновая пыль" только для открытого этапа */}
+          {isOpen && (
+            <span className={"absolute inset-0 z-0 rounded-full animate-ping opacity-30 " + accentBg} />
+          )}
+        </div>
+
+        {/* Линия: имитация глубокого шнура */}
+        {!isLast && (
+          <div className="relative w-[4px] flex-1 my-2 rounded-full bg-[#1A1A1A] shadow-[inset_0_1px_3px_rgba(0,0,0,0.8)] overflow-hidden">
+            <div
+              className={"absolute inset-x-0 top-0 rounded-full transition-[height] duration-500 ease-in-out " + accentBg}
+              style={{
+                height: lineFilled ? "100%" : "0%",
+                boxShadow: lineFilled 
+                  ? (tone === "red" ? "0 0 10px rgba(230,57,70,0.5)" : "0 0 10px rgba(255,122,0,0.5)") 
+                  : "none"
+              }}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Карточка этапа программы */}
+      <div
+        className={
+          "flex-1 bg-rl-card border rounded-2xl overflow-hidden mb-5 transition-all duration-300 " +
+          (isOpen 
+            ? (tone === "red" ? "border-rl-red/50 shadow-[0_4px_20px_rgba(230,57,70,0.08)]" : "border-rl-orange/50 shadow-[0_4px_20px_rgba(255,122,0,0.08)]") 
+            : "border-rl-line hover:border-rl-line/80")
+        }
+      >
+        <button onClick={onToggle} className="w-full flex items-center justify-between px-6 py-5 text-left">
+          <span className={"rl-display text-xl transition-colors duration-300 " + (isOpen ? accentText : "text-rl-ink")}>
+            {group.title}
+          </span>
+          <span className={"rl-mono text-2xl transition-transform duration-300 " + accentText + (isOpen ? " rotate-45" : "")}>
+            +
+          </span>
+        </button>
+        <div className={"grid transition-all duration-300 ease-out " + (isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
+          <div className="overflow-hidden">
+            <ul className="px-6 pb-6 space-y-3 border-t border-rl-line/50 pt-5">
+              {group.items.map((it) => (
+                <li key={it} className="text-sm text-rl-muted flex gap-3 items-start leading-snug">
+                  <span className={"shrink-0 mt-0.5 " + accentText}>—</span>{it}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
 
 function Accordion({ groups, tone = "orange" }: { groups: { title: string; items: string[] }[]; tone?: "orange" | "red" }) {
   const [open, setOpen] = useState<number | null>(0);
-  const accent = tone === "red" ? "text-rl-red" : "text-rl-orange";
+  const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const scrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleToggle = (i: number) => {
+    if (scrollTimer.current) clearTimeout(scrollTimer.current);
+    setOpen((prev) => {
+      const next = prev === i ? null : i;
+      if (next !== null) {
+        scrollTimer.current = setTimeout(() => {
+          stepRefs.current[next]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }, 320);
+      }
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      if (scrollTimer.current) clearTimeout(scrollTimer.current);
+    };
+  }, []);
+
   return (
-    <div className="space-y-3">
-      {groups.map((g, i) => {
-        const isOpen = open === i;
-        return (
-          <div key={g.title} className="bg-rl-card border border-rl-line rounded-2xl overflow-hidden">
-            <button onClick={() => setOpen(isOpen ? null : i)} className="w-full flex items-center justify-between px-6 py-5 text-left">
-              <span className="flex items-center gap-3">
-                <span className={"rl-mono text-xs " + accent}>{String(i + 1).padStart(2, "0")}</span>
-                <span className="rl-display text-xl">{g.title}</span>
-              </span>
-              <span className={"rl-mono text-lg transition-transform duration-300 " + accent + (isOpen ? " rotate-45" : "")}>+</span>
-            </button>
-            <div className={"grid transition-all duration-300 ease-out " + (isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
-              <div className="overflow-hidden">
-                <ul className="px-6 pb-5 space-y-2 border-t border-rl-line pt-4">
-                  {g.items.map((it) => (
-                    <li key={it} className="text-sm text-rl-muted flex gap-3">
-                      <span className={"shrink-0 " + accent}>—</span>{it}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        );
-      })}
+    <div>
+      {groups.map((g, i) => (
+        <ProgramStep
+          key={g.title}
+          ref={(el) => {
+            stepRefs.current[i] = el;
+          }}
+          index={i}
+          total={groups.length}
+          group={g}
+          tone={tone}
+          isOpen={open === i}
+          isPassed={open !== null && i < open}
+          onToggle={() => handleToggle(i)}
+        />
+      ))}
     </div>
+  );
+}
+
+function ReasonCard({ index, text, g }: { index: number; text: string; g: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const mq = window.matchMedia("(max-width: 639px)");
+    let obs: IntersectionObserver | null = null;
+
+    const setup = () => {
+      obs?.disconnect();
+      if (!mq.matches) {
+        // На планшете/десктопе подсветка работает через hover, JS-подсветка не нужна
+        setActive(false);
+        return;
+      }
+      obs = new IntersectionObserver(([entry]) => setActive(entry.isIntersecting), {
+        threshold: 0,
+        // Узкая полоса в центре экрана — карточка "активна", только когда проходит через неё
+        rootMargin: "-42% 0px -42% 0px",
+      });
+      obs.observe(el);
+    };
+
+    setup();
+    mq.addEventListener("change", setup);
+    return () => {
+      obs?.disconnect();
+      mq.removeEventListener("change", setup);
+    };
+  }, []);
+
+  const accentText = g ? "text-rl-orange" : "text-rl-red";
+  const accentBg = g ? "bg-rl-orange" : "bg-rl-red";
+  const accentBorder = g ? "hover:border-rl-orange" : "hover:border-rl-red";
+  const accentBorderActive = g ? "border-rl-orange" : "border-rl-red";
+  const accentDigit = g ? "text-rl-orange/15" : "text-rl-red/15";
+
+  return (
+    <Reveal delay={index * 90}>
+      <div
+        ref={ref}
+        className={
+          "group relative rounded-2xl border bg-rl-card p-6 h-full overflow-hidden " +
+          "transition-all duration-300 ease-out hover:-translate-y-1.5 " +
+          accentBorder + " " +
+          (active ? accentBorderActive + " -translate-y-1.5" : "border-rl-line")
+        }
+      >
+        {/* Огромная полупрозрачная цифра-фон */}
+        <span
+          className={
+            "rl-display absolute -right-3 -top-7 text-[6.5rem] font-black leading-none select-none " +
+            "transition-colors duration-300 group-hover:" + accentDigit + " " +
+            (active ? accentDigit : "text-rl-muted/10")
+          }
+        >
+          {String(index + 1).padStart(2, "0")}
+        </span>
+
+        <div className="relative z-10 flex flex-col h-full">
+          <div
+            className={
+              "rl-display w-10 h-10 rounded-full flex items-center justify-center text-sm font-black mb-6 " +
+              "text-rl-bg transition-transform duration-300 group-hover:scale-110 " +
+              (active ? "scale-110 " : "") + accentBg
+            }
+          >
+            {index + 1}
+          </div>
+          <p className="text-lg font-bold leading-snug">{text}</p>
+        </div>
+
+        {/* Растущая полоса снизу при наведении / подсветке на мобиле */}
+        <span
+          className={
+            "absolute bottom-0 left-0 h-1 transition-all duration-500 ease-out group-hover:w-full " +
+            (active ? "w-full " : "w-0 ") + accentBg
+          }
+        />
+      </div>
+    </Reveal>
   );
 }
 
@@ -752,51 +943,9 @@ export default function Landing() {
               "Поступить в музыкальное учебное заведение",
               "Построить карьеру музыканта",
               "Переключаться от рутины после работы",
-            ].map((t, i) => {
-              const accentText = g ? "text-rl-orange" : "text-rl-red";
-              const accentBg = g ? "bg-rl-orange" : "bg-rl-red";
-              const accentBorder = g ? "hover:border-rl-orange" : "hover:border-rl-red";
-              return (
-                <Reveal key={t} delay={i * 90}>
-                  <div
-                    className={
-                      "group relative rounded-2xl border border-rl-line bg-rl-card p-6 h-full overflow-hidden " +
-                      "transition-all duration-300 ease-out hover:-translate-y-1.5 " + accentBorder
-                    }
-                  >
-                    {/* Огромная полупрозрачная цифра-фон */}
-                    <span
-                      className={
-                        "rl-display absolute -right-3 -top-7 text-[6.5rem] font-black leading-none select-none " +
-                        "text-rl-muted/10 transition-colors duration-300 group-hover:" +
-                        (g ? "text-rl-orange/15" : "text-rl-red/15")
-                      }
-                    >
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-
-                    <div className="relative z-10 flex flex-col h-full">
-                      <div
-                        className={
-                          "rl-display w-10 h-10 rounded-full flex items-center justify-center text-sm font-black mb-6 " +
-                          "text-rl-bg transition-transform duration-300 group-hover:scale-110 " + accentBg
-                        }
-                      >
-                        {i + 1}
-                      </div>
-                      <p className="text-lg font-bold leading-snug">{t}</p>
-                    </div>
-
-                    {/* Растущая полоса снизу при наведении */}
-                    <span
-                      className={
-                        "absolute bottom-0 left-0 h-1 w-0 group-hover:w-full transition-all duration-500 ease-out " + accentBg
-                      }
-                    />
-                  </div>
-                </Reveal>
-              );
-            })}
+            ].map((t, i) => (
+              <ReasonCard key={t} index={i} text={t} g={g} />
+            ))}
           </div>
         </div>
       </section>
