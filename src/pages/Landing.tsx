@@ -176,7 +176,7 @@ function GearImage({ items }: { items: { label: string; src: string }[] }) {
   );
 }
 
-function Reveal({ children, className = "" }: { children: ReactNode; className?: string }) {
+function Reveal({ children, className = "", delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const [shown, setShown] = useState(false);
   useEffect(() => {
@@ -198,6 +198,7 @@ function Reveal({ children, className = "" }: { children: ReactNode; className?:
     <div ref={ref} className={className}>
       <div
         className={"transition-all duration-700 ease-out " + (shown ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8")}
+        style={{ transitionDelay: shown ? `${delay}ms` : "0ms" }}
       >
         {children}
       </div>
@@ -723,33 +724,81 @@ export default function Landing() {
         )}
       </section>
 
-      <section className="bg-rl-panel border-y border-rl-line py-24 px-6">
-        <Reveal className="max-w-3xl mx-auto">
-          <Kicker tone={tone}>Что вы получите</Kicker>
-          <h2 className="rl-display text-2xl sm:text-3xl md:text-4xl mb-10">Шесть причин начать</h2>
-            <ol className="space-y-5">
-              {[
-                "Играть для себя и с друзьями",
-                "Играть в группе, выступать, писать треки",
-                "Создать свой коллектив",
-                "Поступить в музыкальное учебное заведение",
-                "Построить карьеру музыканта",
-                "Переключаться от рутины после работы",
-              ].map((t, i) => (
-                <li key={t} className="flex gap-5 items-start">
-                  <span
+      <section className="relative bg-rl-panel border-y border-rl-line py-24 px-6 overflow-hidden">
+        {/* Гигантская фоновая цифра для атмосферы */}
+        <span
+          className={
+            "rl-display pointer-events-none select-none absolute -top-10 -left-6 sm:left-2 text-[13rem] sm:text-[18rem] font-black leading-none opacity-[0.05] " +
+            (g ? "text-rl-orange" : "text-rl-red")
+          }
+        >
+          6
+        </span>
+
+        <div className="max-w-5xl mx-auto relative z-10">
+          <Reveal>
+            <Kicker tone={tone}>Что вы получите</Kicker>
+            <h2 className="rl-display text-3xl sm:text-4xl md:text-5xl mb-3">Шесть причин начать</h2>
+            <p className="text-rl-muted mb-12 max-w-xl">
+              От первого аккорда до сцены — выбери свою причину или собери их все.
+            </p>
+          </Reveal>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+            {[
+              "Играть для себя и с друзьями",
+              "Играть в группе, выступать, писать треки",
+              "Создать свой коллектив",
+              "Поступить в музыкальное учебное заведение",
+              "Построить карьеру музыканта",
+              "Переключаться от рутины после работы",
+            ].map((t, i) => {
+              const accentText = g ? "text-rl-orange" : "text-rl-red";
+              const accentBg = g ? "bg-rl-orange" : "bg-rl-red";
+              const accentBorder = g ? "hover:border-rl-orange" : "hover:border-rl-red";
+              return (
+                <Reveal key={t} delay={i * 90}>
+                  <div
                     className={
-                      "rl-display text-3xl w-12 text-right shrink-0 tabular-nums " +
-                      (g ? "text-rl-orange" : "text-rl-red")
+                      "group relative rounded-2xl border border-rl-line bg-rl-card p-6 h-full overflow-hidden " +
+                      "transition-all duration-300 ease-out hover:-translate-y-1.5 " + accentBorder
                     }
                   >
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <span className="pt-1 text-left flex-1">{t}</span>
-                </li>
-              ))}
-            </ol>
-        </Reveal>
+                    {/* Огромная полупрозрачная цифра-фон */}
+                    <span
+                      className={
+                        "rl-display absolute -right-3 -top-7 text-[6.5rem] font-black leading-none select-none " +
+                        "text-rl-muted/10 transition-colors duration-300 group-hover:" +
+                        (g ? "text-rl-orange/15" : "text-rl-red/15")
+                      }
+                    >
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+
+                    <div className="relative z-10 flex flex-col h-full">
+                      <div
+                        className={
+                          "rl-display w-10 h-10 rounded-full flex items-center justify-center text-sm font-black mb-6 " +
+                          "text-rl-bg transition-transform duration-300 group-hover:scale-110 " + accentBg
+                        }
+                      >
+                        {i + 1}
+                      </div>
+                      <p className="text-lg font-bold leading-snug">{t}</p>
+                    </div>
+
+                    {/* Растущая полоса снизу при наведении */}
+                    <span
+                      className={
+                        "absolute bottom-0 left-0 h-1 w-0 group-hover:w-full transition-all duration-500 ease-out " + accentBg
+                      }
+                    />
+                  </div>
+                </Reveal>
+              );
+            })}
+          </div>
+        </div>
       </section>
 
 <section id="team" className="max-w-6xl mx-auto px-6 py-24">
@@ -769,7 +818,7 @@ export default function Landing() {
           ]}
         />
         <div>
-          <Kicker tone="orange">Преподаватель · Гитара</Kicker>
+          <Kicker tone="orange">Преподаватель · Арина</Kicker>
           <p className="rl-display text-3xl md:text-4xl leading-tight mb-6">
             «Гитара — честная конкуренция со стрессом»
           </p>
@@ -794,7 +843,7 @@ export default function Landing() {
           ]}
         />
         <div>
-          <Kicker tone="red">Преподаватель · Ударные</Kicker>
+          <Kicker tone="red">Преподаватель · Анастасия</Kicker>
           <p className="rl-display text-3xl md:text-4xl leading-tight mb-6">
             «Успех случается с теми, кто пробует»
           </p>

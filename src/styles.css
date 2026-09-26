@@ -237,4 +237,3 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .rl-marquee { animation: none; }
 }
-
