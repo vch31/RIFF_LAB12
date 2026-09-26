@@ -364,6 +364,7 @@ function Picker({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void }) {
         const border = tone === "red" ? "border-rl-red" : "border-rl-orange";
         const text = tone === "red" ? "text-rl-red" : "text-rl-orange";
         const shadow = tone === "red" ? "shadow-rl-red/20" : "shadow-rl-orange/20";
+        const activeBg = tone === "red" ? "bg-rl-red/10" : "bg-rl-orange/10";
         const dot = tone === "red" ? "bg-rl-red" : "bg-rl-orange";
         return (
           <button
@@ -373,10 +374,10 @@ function Picker({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void }) {
             aria-pressed={active}
             className={
               "group relative text-left rounded-2xl border-2 p-4 sm:p-5 cursor-pointer select-none " +
-              "transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-rl-bg " +
+              "backdrop-blur-sm transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-rl-bg " +
               (active
-                ? border + " bg-rl-card shadow-lg " + shadow
-                : "border-rl-line bg-rl-panel/40 opacity-50 grayscale hover:opacity-80 hover:grayscale-0")
+                ? border + " " + activeBg + " shadow-lg " + shadow
+                : "border-rl-line bg-rl-bg/20 opacity-50 grayscale hover:opacity-80 hover:grayscale-0")
             }
           >
             <Icon className={"w-7 h-7 sm:w-8 sm:h-8 mb-2 " + (active ? text : "text-rl-muted")} />
@@ -808,10 +809,22 @@ export default function Landing() {
 </section>
 
 
-<section id="pricing" className={"relative py-28 px-6 overflow-hidden transition-colors duration-700 " + (g ? "bg-[#FF7A00]" : "bg-[#E63946]")}>
+<section
+  id="pricing"
+className={
+  "relative pt-8 sm:pt-12 pb-24 px-6 overflow-visible transition-colors duration-700 " +
+  (g ? "bg-[#FF7A00]" : "bg-[#E63946]")
+}
+>
   {/* Декоративные линии фона (струны) */}
   <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-30 z-0">
-    <svg className="absolute w-[150%] sm:w-full h-[150%] sm:h-full left-[-25%] sm:left-0 top-[-25%] sm:top-0" viewBox="0 0 1000 800" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+    <svg
+      className="absolute w-[150%] sm:w-full h-[150%] sm:h-full left-[-25%] sm:left-0 top-[-25%] sm:top-0"
+      viewBox="0 0 1000 800"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      preserveAspectRatio="none"
+    >
       <path d="M-100 400 C 300 -100, 700 900, 1100 400" stroke="#1A1A1A" strokeWidth="1" />
       <path d="M-100 500 C 400 0, 600 1000, 1100 500" stroke="#1A1A1A" strokeWidth="1" />
       <path d="M-100 300 C 200 800, 800 0, 1100 300" stroke="#1A1A1A" strokeWidth="1" />
@@ -819,12 +832,22 @@ export default function Landing() {
   </div>
 
   <Reveal className="max-w-3xl mx-auto relative z-10 flex flex-col items-center">
-    {/* Инструмент над заголовком (в потоке, с отрицательным отступом) */}
-    <div className="w-[130%] sm:w-[95%] max-w-[850px] pointer-events-none z-10 drop-shadow-[0_20px_30px_rgba(0,0,0,0.4)] -mb-10 sm:-mb-24">
+
+    {/* Инструмент — визуально пересекает границу секций */}
+    <div
+      className={
+        "w-[130%] sm:w-[95%] max-w-[850px] pointer-events-none z-10 " +
+        "drop-shadow-[0_20px_30px_rgba(0,0,0,0.4)] " +
+        "-mt-28 sm:-mt-40 -mb-6 sm:-mb-16"
+      }
+    >
       <img
         src={g ? jetImg : drumSide}
         alt={g ? "Guitar" : "Drums"}
-        className={"w-full h-auto object-contain transform " + (g ? "-rotate-[75deg]" : "")} 
+        className={
+          "w-full h-auto object-contain transform " +
+          (g ? "-rotate-[75deg]" : "")
+        }
       />
     </div>
 
@@ -835,6 +858,7 @@ export default function Landing() {
         <br />
         Lessons
       </h2>
+
       <p className="text-[#1A1A1A] text-xs sm:text-sm font-bold uppercase tracking-widest mt-6 mb-2">
         Абонементы на 1 месяц обучения
       </p>
@@ -844,15 +868,57 @@ export default function Landing() {
     <div className="border border-[#1A1A1A]/30 bg-transparent flex flex-col w-full relative z-20">
       {g ? (
         <>
-          <PriceRow n="1" unit="ЧАС" label="ПРОБНОЕ" note="РАЗОВОЕ" price="55р." highlight />
-          <PriceRow n="4" unit="ЧАСА" label="ОДИН РАЗ" note="В НЕДЕЛЮ" price="200р. в месяц" save="20р." />
-          <PriceRow n="8" unit="ЧАСОВ" label="ДВА РАЗА" note="В НЕДЕЛЮ" price="380р. в месяц" save="60р." />
+          <PriceRow
+            n="1"
+            unit="ЧАС"
+            label="ПРОБНОЕ"
+            note="РАЗОВОЕ"
+            price="55р."
+            highlight
+          />
+          <PriceRow
+            n="4"
+            unit="ЧАСА"
+            label="ОДИН РАЗ"
+            note="В НЕДЕЛЮ"
+            price="200р. в месяц"
+            save="20р."
+          />
+          <PriceRow
+            n="8"
+            unit="ЧАСОВ"
+            label="ДВА РАЗА"
+            note="В НЕДЕЛЮ"
+            price="380р. в месяц"
+            save="60р."
+          />
         </>
       ) : (
         <>
-          <PriceRow n="1" unit="ЧАС" label="РАЗОВОЕ" note="ПРОБНОЕ" price="50р." highlight />
-          <PriceRow n="4" unit="ЧАСА" label="ОДИН РАЗ" note="В НЕДЕЛЮ" price="180р. в месяц" save="20р." />
-          <PriceRow n="8" unit="ЧАСОВ" label="ДВА РАЗА" note="В НЕДЕЛЮ" price="340р. в месяц" save="60р." />
+          <PriceRow
+            n="1"
+            unit="ЧАС"
+            label="РАЗОВОЕ"
+            note="ПРОБНОЕ"
+            price="50р."
+            highlight
+          />
+          <PriceRow
+            n="4"
+            unit="ЧАСА"
+            label="ОДИН РАЗ"
+            note="В НЕДЕЛЮ"
+            price="180р. в месяц"
+            save="20р."
+          />
+          <PriceRow
+            n="8"
+            unit="ЧАСОВ"
+            label="ДВА РАЗА"
+            note="В НЕДЕЛЮ"
+            price="340р. в месяц"
+            save="60р."
+          />
         </>
       )}
     </div>
@@ -906,30 +972,30 @@ export default function Landing() {
 {/* ─── Плавающая кнопка только на мобильных ─── */}
 <div
   className={
-    "fixed bottom-5 inset-x-0 z-50 flex justify-center px-6 md:hidden transition-all duration-500 ease-out motion-reduce:transition-none " +
-    (showCta ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6 pointer-events-none")
+    "fixed bottom-6 inset-x-0 z-50 flex justify-center px-6 md:hidden transition-all duration-500 ease-out motion-reduce:transition-none " +
+    (showCta ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8 pointer-events-none")
   }
 >
   <a
     href="#contact"
     className={
-      "flex items-center justify-center gap-2 py-3 px-7 rl-mono text-xs tracking-wider uppercase rounded-full " +
-      "backdrop-blur-md bg-rl-bg/60 border shadow-2xl active:scale-95 transition-transform " +
+      "flex items-center justify-center py-4 px-8 font-heading text-[15px] font-black tracking-wider uppercase rounded-2xl " +
+      "backdrop-blur-xl transition-all duration-300 active:scale-95 " +
       (g
-        ? "border-rl-orange/50 text-rl-orange shadow-rl-orange/10"
-        : "border-rl-red/50 text-rl-red shadow-rl-red/10")
+        ? "bg-[#1A1A1A]/80 border border-[#FF7A00] text-[#FF7A00] shadow-[0_8px_32px_rgba(255,122,0,0.35)]"
+        : "bg-[#1A1A1A]/80 border border-[#E63946] text-[#E63946] shadow-[0_8px_32px_rgba(230,57,70,0.35)]")
     }
   >
     Записаться на пробное
   </a>
 </div>
 
-<footer className="border-t border-rl-line pt-10 pb-28 md:pb-10 px-6">
-  <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-    <span className="rl-display text-lg">
-      RIFF<span className="text-rl-orange">LAB12</span> × DRUM<span className="text-rl-red">LAB12</span>
+<footer className="border-t border-rl-line py-6 md:py-4 px-6">
+  <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
+    <span className="rl-display text-[1rem] sm:text-lg text-rl-muted opacity-40 transition-opacity hover:opacity-100">
+      RIFFLAB12 × DRUMLAB12
     </span>
-    <p className="text-xs text-rl-muted">
+    <p className="text-[10px] sm:text-xs text-rl-muted text-center md:text-right">
       © 2026 Riff Lab12 · Drum Lab12. Студии гитары и ударных, Гродно.
     </p>
   </div>
