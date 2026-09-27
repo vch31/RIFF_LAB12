@@ -543,7 +543,7 @@ function CTA({
 
 function Picker({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void }) {
   const cards: { key: Mode; label: string; desc: string; Icon: typeof GuitarIcon; tone: "orange" | "red" }[] = [
-    { key: "guitar", label: "RIFF LAB12", desc: "Электро и акустическая гитара", Icon: GuitarIcon, tone: "orange" },
+    { key: "guitar", label: "RIFF LAB12", desc: "Электрогитара и акустика", Icon: GuitarIcon, tone: "orange" },
     { key: "drums", label: "DRUM LAB12", desc: "Ударная установка", Icon: DrumIcon, tone: "red" },
   ];
   return (
@@ -882,17 +882,6 @@ export default function Landing() {
                           </p>
                         </div>
                       </div>
-
-                      <div className="flex gap-6 items-start">
-                        <span className="rl-display text-4xl text-rl-muted/40">03</span>
-                        <div>
-                          <div className="rl-mono text-xs text-rl-red mb-1">АРЕНДА DRUM ROOM</div>
-                          <h3 className="rl-display text-xl mb-2">Почасовая аренда</h3>
-                          <p className="text-sm text-rl-muted leading-relaxed">
-                            1ч — 20 р · 2ч — 40 р · 4ч — 80 р
-                          </p>
-                        </div>
-                      </div>
                     </div>
                   </div>
 
@@ -925,7 +914,9 @@ export default function Landing() {
             <Kicker tone={tone}>Что вы получите</Kicker>
             <h2 className="rl-display text-3xl sm:text-4xl md:text-5xl mb-3">Шесть причин начать</h2>
             <p className="text-rl-muted mb-12 max-w-xl">
-              От первого аккорда до сцены — выбери свою причину или собери их все.
+              {g
+                ? "От первого аккорда до сцены — выбери свою причину или собери их все."
+                : "От первого ритма до сцены — выбери свою причину или собери их все."}
             </p>
           </Reveal>
 
@@ -1248,11 +1239,11 @@ export default function Landing() {
   <a
     href="#contact"
     className={
-      "flex items-center justify-center py-4 px-8 font-heading text-[15px] font-black tracking-wider uppercase rounded-2xl " +
-      "backdrop-blur-xl transition-all duration-300 active:scale-95 " +
+      "w-full max-w-[320px] flex items-center justify-center py-4 px-6 rl-mono text-xs font-bold tracking-widest uppercase rounded-full " +
+      "shadow-2xl transition-all duration-300 active:scale-95 " +
       (g
-        ? "bg-[#1A1A1A]/80 border border-[#FF7A00] text-[#FF7A00] shadow-[0_8px_32px_rgba(255,122,0,0.35)]"
-        : "bg-[#1A1A1A]/80 border border-[#E63946] text-[#E63946] shadow-[0_8px_32px_rgba(230,57,70,0.35)]")
+        ? "bg-rl-orange text-rl-bg shadow-rl-orange/20 border border-rl-orange/50"
+        : "bg-rl-red text-rl-bg shadow-rl-red/20 border border-rl-red/50")
     }
   >
     Записаться на пробное
@@ -1261,11 +1252,9 @@ export default function Landing() {
 
 <footer className="border-t border-rl-line py-6 md:py-4 px-6">
   <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
-    <span className="rl-display text-[1rem] sm:text-lg text-rl-muted opacity-40 transition-opacity hover:opacity-100">
-      RIFFLAB12 × DRUMLAB12
-    </span>
+
     <p className="text-[10px] sm:text-xs text-rl-muted text-center md:text-right">
-      © 2026 Riff Lab12 · Drum Lab12. Студии гитары и ударных, Гродно.
+      © 2026 Riff Lab12 · Drum Lab12. Студия гитары и ударных, Гродно.
     </p>
   </div>
 </footer>
