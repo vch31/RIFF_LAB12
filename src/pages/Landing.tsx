@@ -230,7 +230,10 @@ function Reveal({ children, className = "", delay = 0 }: { children: ReactNode; 
           obs.disconnect();
         }
       },
-      { threshold: 0.15 },
+      // threshold: 0 + отрицательный отступ снизу = «сработать, когда верх блока
+      // зашёл в экран на ~80px». Проценты высоты (threshold: 0.15) для высоких
+      // блоков вроде секции программы срабатывали слишком поздно.
+      { threshold: 0, rootMargin: "0px 0px -80px 0px" },
     );
     obs.observe(el);
     return () => obs.disconnect();
