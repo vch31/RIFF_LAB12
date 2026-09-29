@@ -9,6 +9,40 @@ import drumPng from '../assets/drum_png.png'
 type Mode = "guitar" | "drums";
 type SocialName = "instagram" | "telegram" | "tiktok";
 
+// ─── Позиционирование инструмента в секции PRICING
+const PRICING_ART = {
+  guitar: {
+    src: jetImg,
+    alt: "Guitar",
+    marginTop: "-14rem",      // ← ВЫШЕ/НИЖЕ (мобилка)  минус = выше
+    marginTopSm: "-10rem",   // ← ВЫШЕ/НИЖЕ (десктоп)
+    marginBottom: "-4rem",
+    marginBottomSm: "-4rem",
+    shiftX: -10,               // ← ВЛЕВО/ВПРАВО (мобилка)   минус = влево
+    shiftXSm: 16,            // ← ВЛЕВО/ВПРАВО (десктоп)
+    width: "130vw",          // ← ШИРИНА (мобилка)
+    widthSm: "95%",
+    maxWidth: "850px",
+    rotate: 60,             // ← ПОВОРОТ в градусах
+    scale: 0.89,                // ← РАЗМЕР (1 = 100%)
+  },
+  drums: {
+    src: drumPng,
+    alt: "Drums",
+    marginTop: "-9rem",
+    marginTopSm: "-7rem",
+    marginBottom: "-1rem",
+    marginBottomSm: "-2.5rem",
+    shiftX: 0,
+    shiftXSm: -24,
+    width: "130vw",
+    widthSm: "95%",
+    maxWidth: "850px",
+    rotate: 0,
+    scale: 0.80,
+  },
+};
+
 function SocialIcon({ name, className }: { name: SocialName; className?: string }) {
   if (name === "instagram") {
     return (
@@ -137,11 +171,11 @@ function TeacherPass({
         </div>
         <div className="p-5">
           <div className={"rl-mono text-[10px] mb-3 tracking-widest " + text}>ALL ACCESS · {role}</div>
-          <div className="space-y-1.5 border-t border-rl-line pt-3">
+          <div className="space-y-2 border-t border-rl-line pt-3">
             {fields.map(([k, v]) => (
-              <div key={k} className="flex justify-between text-xs rl-mono">
-                <span className="text-rl-muted">{k}</span>
-                <span>{v}</span>
+              <div key={k} className="flex justify-between gap-3 text-xs rl-mono">
+                <span className="text-rl-muted shrink-0">{k}</span>
+                <span className="text-right">{v}</span>
               </div>
             ))}
           </div>
@@ -624,13 +658,13 @@ export default function Landing() {
   useEffect(() => {
     const onScroll = () => {
       const pastHero = window.scrollY > window.innerHeight * 0.9;
-      const hideNear = (id: string) => {
-        const el = document.getElementById(id);
-        if (!el) return false;
-        const rect = el.getBoundingClientRect();
-        return rect.top < window.innerHeight * 0.6 && rect.bottom > window.innerHeight * 0.1;
-      };
-      setShowCta(pastHero && !hideNear("contact") && !hideNear("team"));
+      const teamEl = document.getElementById("team");
+      // Прячем кнопку, как только верх секции "team" поднялся выше 60% экрана,
+      // и держим её скрытой до конца страницы (прайс, контакты, футер).
+      const reachedTeam = teamEl
+        ? teamEl.getBoundingClientRect().top < window.innerHeight * 0.6
+        : false;
+      setShowCta(pastHero && !reachedTeam);
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -995,10 +1029,10 @@ export default function Landing() {
 <section
   id="pricing"
   className={
-    "relative pt-8 sm:pt-12 pb-24 px-6 overflow-visible transition-colors duration-700 " +
+    "relative pt-4 sm:pt-10 pb-24 px-6 overflow-visible transition-colors duration-700 " +
     (g ? "bg-[#FF7A00]" : "bg-[#E63946]")
   }
->
+>0
   {/* Декоративные линии фона (струны) */}
   <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-30 z-0">
     <svg
@@ -1014,25 +1048,34 @@ export default function Landing() {
     </svg>
   </div>
 
-  <Reveal className="max-w-3xl mx-auto relative z-10 flex flex-col items-center">
+  {/* Инструмент — визуально пересекает границу секций */}
+  {(() => {
+    const art = g ? PRICING_ART.guitar : PRICING_ART.drums;
+    const isDesktop = typeof window !== "undefined" && window.innerWidth >= 640;
+    return (
+      <div className="max-w-3xl mx-auto relative z-10 flex flex-col items-center">
+        <div
+          className="pointer-events-none z-10 drop-shadow-[0_20px_30px_rgba(0,0,0,0.4)]"
+          style={{
+            width: isDesktop ? art.widthSm : art.width,
+            maxWidth: art.maxWidth,
+            marginTop: isDesktop ? art.marginTopSm : art.marginTop,
+            marginBottom: isDesktop ? art.marginBottomSm : art.marginBottom,
+            transform: `translateX(${isDesktop ? art.shiftXSm : art.shiftX}px)`,
+          }}
+        >
+          <img
+            src={art.src}
+            alt={art.alt}
+            className="w-full h-auto object-contain"
+            style={{ transform: `rotate(${art.rotate}deg) scale(${art.scale})` }}
+          />
+        </div>
+      </div>
+    );
+  })()}
 
-    {/* Инструмент — визуально пересекает границу секций */}
-    <div
-      className={
-        "w-[130%] sm:w-[95%] max-w-[850px] pointer-events-none z-10 " +
-        "drop-shadow-[0_20px_30px_rgba(0,0,0,0.4)] " +
-        "-mt-28 sm:-mt-40 -mb-6 sm:-mb-16"
-      }
-    >
-      <img
-        src={g ? jetImg : drumPng}
-        alt={g ? "Guitar" : "Drums"}
-        className={
-          "w-full h-auto object-contain transform " +
-          (g ? "-rotate-[75deg]" : "")
-        }
-      />
-    </div>
+  <Reveal className="max-w-3xl mx-auto relative z-10 flex flex-col items-center">
 
     {/* Заголовок */}
     <div className="text-center mb-10 relative z-0">
@@ -1192,6 +1235,9 @@ export default function Landing() {
       <section id="contact" className="max-w-4xl mx-auto px-6 py-24 text-center">
         <Reveal>
           <Kicker tone={tone}>Гродно, Беларусь</Kicker>
+          <p className="rl-mono text-xs text-rl-muted mt-2 mb-6 tracking-wider uppercase">
+            ул. Горького, 91
+          </p>
           <h2 className="rl-display text-2xl sm:text-4xl md:text-5xl mb-8">Записывайся на пробное занятие</h2>
           <div className="flex gap-4 justify-center flex-wrap mb-8">
             <CTA href={igUrl} ext tone={tone}>
@@ -1251,10 +1297,10 @@ export default function Landing() {
 </div>
 
 <footer className="border-t border-rl-line py-6 md:py-4 px-6">
-  <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
+  <div className="max-w-6xl mx-auto flex justify-center items-center gap-2 md:gap-4">
 
-    <p className="text-[10px] sm:text-xs text-rl-muted text-center md:text-right">
-      © 2026 Riff Lab12 · Drum Lab12. Студия гитары и ударных, Гродно.
+    <p className="text-[10px] sm:text-xs text-rl-muted text-center">
+      © 2026 Riff Lab12 · Drum Lab12. Студия гитары и ударных, Гродно, ул. Горького, 91.
     </p>
   </div>
 </footer>
