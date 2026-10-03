@@ -1026,8 +1026,6 @@ export default function Landing() {
     const onScroll = () => {
       const pastHero = window.scrollY > window.innerHeight * 0.9;
       const teamEl = document.getElementById("team");
-      // Прячем кнопку, как только верх секции "team" поднялся выше 60% экрана,
-      // и держим её скрытой до конца страницы (прайс, контакты, футер).
       const reachedTeam = teamEl ? teamEl.getBoundingClientRect().top < window.innerHeight * 0.6 : false;
       setShowCta(pastHero && !reachedTeam);
     };
@@ -1142,12 +1140,9 @@ export default function Landing() {
             })}
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 max-w-xl mx-auto">
+          <div className="flex justify-center">
             <CTA href="#contact" tone={m.tone} className="text-center">
               Записаться на пробное
-            </CTA>
-            <CTA href="#programs" ghost tone={m.tone} className="text-center">
-              Смотреть программу
             </CTA>
           </div>
         </div>
