@@ -812,21 +812,29 @@ function GuitarTiltDesktop() {
  *     в лёгкий наклон вправо. Одновременно загорается свет.
  *  3. Дальше живёт: покачивание, дыхание света, искры, медленный доворот.
  *
+ * Плавность (на iPhone это главное):
+ *  - значения не прыгают за пальцем, а «догоняют» его с лёгкой инерцией (smooth):
+ *    Safari отдаёт scroll-события с запозданием относительно прокрутки, и без
+ *    сглаживания гитара дёргается; с инерцией шаги не видны
+ *  - путь растянут на ~1.5 экрана, кривые мягкие на обоих концах (нет рывка на старте)
+ *  - только дешёвые для GPU свойства: transform и opacity. Размытие статичное,
+ *    блик едет через transform, без mix-blend-mode, perspective и анимации background
+ *
  * В CSS-переменные пишется без setState (React страницу не перерисовывает):
- *   --s  0..1  путь от правого края к центру (ease in-out)
+ *   --s  0..1  путь от правого края к центру
  *   --f  0..1  фокус: размытая копия уходит, чёткая проявляется
  *   --p  0..1  свет: луч, ореол, пятно на полу, контур, искры
  *   --r  deg   наклон
- * Всё зависит только от положения на экране, так что при скролле туда-обратно
- * гитара проходит те же положения, а не дёргается.
  */
 const GUITAR_STAGE = {
   // ── геометрия сцены
   slot: "min(78svh, 600px)", // высота зоны под текстом И высота прилипшего блока (одно и то же)
   top: "calc((100svh - min(78svh, 600px)) / 2)", // где гитара «прилипает»: по центру экрана
   box: 0.42, // ширина/высота кадра. PNG квадратный, берём центральную полосу
-  settle: 1.0, // длина перелёта в высотах сцены (больше = дольше и плавнее)
+  extra: 1, // сколько ещё «высот сцены» гитара остаётся прилипшей, чтобы путь был длиннее (0 = рывком)
+  settle: 1.4, // длина перелёта в высотах сцены (больше = дольше и плавнее)
   tMax: 1.6, // докуда идёт доворот после посадки (1 = сразу стоп)
+  smooth: 0.1, // сек, инерция: больше = плавнее и «тяжелее», меньше = отзывчивее (0.05–0.2)
   // ── начало: за текстом справа
   pinX: 44, // vw вправо от центра. 44 = центр гитары у самого края, видна примерно половина
   pinScale: 1.22, // крупнее = ближе к камере
@@ -836,9 +844,8 @@ const GUITAR_STAGE = {
   // ── наклон
   from: -12, // deg, в начале гитара наклонена верхом к центру (минус = влево)
   to: 4, // deg, лёгкий наклон вправо, в который она «ложится»
-  overshoot: 2.2, // сила «перелёта» (0 = без, 1.7 = мягко, 3 = резко)
+  bump: 2.6, // deg, мягкий «перелёт» через положение to перед тем как лечь (0 = без)
   drift: 2.5, // deg, медленный доворот вправо после посадки
-  yaw: 0.8, // квазиразворот по вертикальной оси (0 = плоско)
   // ── свет и жизнь
   idle: true, // покачивание + дыхание света
   sparks: true, // искры
@@ -852,6 +859,10 @@ const GUITAR_STAGE = {
   rimSize: 14, // px
   gloss: 0.7, // яркость блика, пробегающего по гитаре при выходе (0 = выключить)
 };
+
+/** Строки сетки секции на мобиле: текст + зона под гитару (с запасом на длинный путь) */
+const stageRows = (reduce: boolean) =>
+  `auto calc(${GUITAR_STAGE.slot} * ${reduce ? 1 : 1 + GUITAR_STAGE.extra})`;
 
 // Искры: x, % слева; s, px; d и t, сек (задержка и длительность); dx, px вбок; dy, svh вверх
 const EMBERS = [
@@ -890,8 +901,8 @@ const STAGE_MASK = {
  * Один «слой» гитары: фото + блик внутри одного контейнера.
  * Их два: размытый (виден за текстом) и чёткий (проявляется при фокусе).
  * Блик лежит внутри слоя, поэтому на размытой гитаре он тоже размыт, а на чёткой резкий.
- * Размытие статичное (не меняется по кадрам), а между слоями идёт кроссфейд по opacity: это дёшево.
- * Размытый слой уходит позже, чем проявляется чёткий, поэтому посередине получается мягкое свечение.
+ * Размытие статичное, между слоями идёт кроссфейд по opacity. Размытый слой уходит
+ * позже, чем проявляется чёткий, поэтому посередине получается мягкое свечение.
  */
 function GuitarLayer({ blurred }: { blurred?: boolean }) {
   const g = GUITAR_STAGE;
@@ -901,6 +912,7 @@ function GuitarLayer({ blurred }: { blurred?: boolean }) {
       style={{
         opacity: blurred ? "calc(1 - var(--f, 0) * var(--f, 0))" : "var(--f, 0)",
         filter: blurred ? `blur(${g.pinBlur}px) brightness(1.35)` : undefined,
+        willChange: "opacity", // отдельный слой: Safari не перерисовывает размытие, а только меняет прозрачность
       }}
     >
       <img
@@ -911,20 +923,23 @@ function GuitarLayer({ blurred }: { blurred?: boolean }) {
         style={STAGE_IMG}
       />
       {g.gloss > 0 && (
-        // Полоса света, обрезанная по форме гитары. Едет справа налево вместе с «выходом»,
-        // видна в основном посередине пути (bell: 4·s·(1−s))
+        // Маска по форме гитары статичная, а полоса света ЕДЕТ через transform
+        // (раньше анимировался background-position под маской: это перерисовка на каждом кадре).
+        // Видна в основном посередине пути (bell: 4·s·(1−s))
         <div
-          className="absolute inset-0"
-          style={{
-            ...STAGE_MASK,
-            mixBlendMode: "screen",
-            opacity: `calc(${g.gloss} * 4 * var(--s, 0) * (1 - var(--s, 0)))`,
-            background:
-              "linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.35) 46%, rgba(255,255,255,0.95) 50%, rgba(255,255,255,0.35) 54%, transparent 62%)",
-            backgroundSize: "300% 100%",
-            backgroundPosition: "calc(10% + 80% * var(--s, 0)) 0",
-          }}
-        />
+          className="absolute inset-0 overflow-hidden"
+          style={{ ...STAGE_MASK, opacity: `calc(${g.gloss} * 4 * var(--s, 0) * (1 - var(--s, 0)))` }}
+        >
+          <div
+            className="absolute top-0 bottom-0 left-0 will-change-transform"
+            style={{
+              width: "70%",
+              transform: "translate3d(calc(136% - 229% * var(--s, 0)), 0, 0) skewX(-14deg)",
+              background:
+                "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 35%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0.3) 65%, transparent 100%)",
+            }}
+          />
+        </div>
       )}
     </div>
   );
@@ -946,46 +961,69 @@ function GuitarStageImage() {
       root.style.setProperty("--r", String(g.to));
       return;
     }
-    // easeOutBack: доходит до 1 с небольшим перелётом
-    const c1 = g.overshoot;
-    const c3 = c1 + 1;
-    const easeOutBack = (x: number) => 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
     const clamp = (x: number, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, x));
     const smooth = (x: number) => {
       const v = clamp(x);
-      return v * v * (3 - 2 * v);
+      return v * v * (3 - 2 * v); // нулевая скорость на обоих концах: нет рывка на старте и остановки
     };
 
     let h = 0; // высота прилипшего блока, px
     let stickTop = 0; // на каком расстоянии от верха экрана он прилипает, px
-    let raf = 0;
 
-    const update = () => {
-      raf = 0;
+    // Сырой прогресс от положения на экране.
+    // 0 пока блок прилип и идёт текст, 1 в момент, когда sticky отпускает гитару в зону под текстом
+    const computeT = () => {
       const d = h * g.settle;
       const bottom = root.getBoundingClientRect().bottom;
-      // 0 пока блок прилип и идёт текст, 1 в момент, когда sticky отпускает гитару в зону под текстом
-      const t = clamp((stickTop + h + d - bottom) / d, 0, g.tMax);
+      return clamp((stickTop + h + d - bottom) / d, 0, g.tMax);
+    };
+
+    const render = (t: number) => {
       const tt = Math.min(1, t);
-      const S = tt < 0.5 ? 4 * tt * tt * tt : 1 - Math.pow(-2 * tt + 2, 3) / 2; // easeInOutCubic
+      const S = smooth(tt);
       const F = smooth((tt - 0.12) / 0.7); // фокус наводится в середине пути
       const P = smooth((tt - 0.4) / 0.6); // свет загорается к посадке
-      const swing = g.from + (g.to - g.from) * easeOutBack(tt);
-      const drift = g.drift * Math.max(0, (t - 1) / (g.tMax - 1));
+      // мягкий «перелёт»: колокол sin² с нулевой скоростью на концах
+      const bump = g.bump * Math.pow(Math.sin(Math.PI * clamp((tt - 0.55) / 0.45)), 2);
+      const drift = g.drift * smooth((t - 1) / (g.tMax - 1));
       root.style.setProperty("--s", S.toFixed(4));
       root.style.setProperty("--f", F.toFixed(4));
       root.style.setProperty("--p", P.toFixed(4));
-      root.style.setProperty("--r", (swing + drift).toFixed(2));
+      root.style.setProperty("--r", (g.from + (g.to - g.from) * S + bump + drift).toFixed(2));
+    };
+
+    // Инерция: текущее значение догоняет целевое по экспоненте (не зависит от частоты кадров)
+    let target = 0;
+    let cur = 0;
+    let last = 0;
+    let raf = 0;
+    const tick = (now: number) => {
+      const dt = Math.min(0.05, (now - last) / 1000 || 0.016);
+      last = now;
+      cur += (target - cur) * (1 - Math.exp(-dt / g.smooth));
+      if (Math.abs(target - cur) < 0.0004) {
+        cur = target;
+        raf = 0;
+      } else {
+        raf = requestAnimationFrame(tick);
+      }
+      render(cur);
+    };
+    const onScroll = () => {
+      target = computeT();
+      if (!raf) {
+        last = performance.now();
+        raf = requestAnimationFrame(tick);
+      }
     };
     const measure = () => {
       h = stage.offsetHeight;
       const top = parseFloat(getComputedStyle(stage).top);
       stickTop = Number.isFinite(top) ? top : (window.innerHeight - h) / 2;
-      update();
+      target = cur = computeT(); // без «догонялок» на старте и после ресайза
+      render(cur);
     };
-    const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(update);
-    };
+
     measure();
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", measure);
@@ -994,7 +1032,7 @@ function GuitarStageImage() {
       window.removeEventListener("resize", measure);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [reduceMotion, g.settle, g.tMax, g.from, g.to, g.overshoot, g.drift]);
+  }, [reduceMotion, g.settle, g.tMax, g.smooth, g.from, g.to, g.bump, g.drift]);
 
   const S = "var(--s, 0)";
   const P = "var(--p, 0)";
@@ -1012,8 +1050,8 @@ function GuitarStageImage() {
     >
       {alive && <style>{STAGE_KEYFRAMES}</style>}
 
-      {/* sticky: пока идёт текст, блок стоит на месте, в конце контейнера его отпускает в зону под текстом.
-          При reduced-motion без sticky: просто лежит в зоне под текстом */}
+      {/* sticky: пока идёт текст (и ещё чуть-чуть после), блок стоит на месте, в конце контейнера
+          его отпускает в зону под текстом. При reduced-motion без sticky: просто лежит в зоне */}
       <div
         ref={stageRef}
         style={
@@ -1033,24 +1071,26 @@ function GuitarStageImage() {
           />
         )}
 
-        {/* Луч прожектора: трапеция, размытая целиком. Качается вслед за наклоном гитары, пивот сверху */}
+        {/* Луч прожектора. Снаружи только transform и opacity (дёшево, свой слой),
+            внутри статичное размытие: Safari кэширует его и не перерисовывает на каждом кадре */}
         {g.beam > 0 && (
           <div
-            className="absolute inset-0"
+            className="absolute inset-0 will-change-transform"
             style={{
               opacity: P,
-              filter: "blur(24px)",
               transformOrigin: "50% 0%",
               transform: `rotate(calc(${R} * ${g.beamSwing}deg))`,
             }}
           >
-            <div
-              className="absolute inset-0"
-              style={{
-                clipPath: "polygon(41% 0, 59% 0, 96% 100%, 4% 100%)",
-                background: `linear-gradient(to bottom, rgba(${g.lightRgb},${g.beam}), transparent 90%)`,
-              }}
-            />
+            <div className="absolute inset-0" style={{ filter: "blur(20px)" }}>
+              <div
+                className="absolute inset-0"
+                style={{
+                  clipPath: "polygon(41% 0, 59% 0, 96% 100%, 4% 100%)",
+                  background: `linear-gradient(to bottom, rgba(${g.lightRgb},${g.beam}), transparent 90%)`,
+                }}
+              />
+            </div>
           </div>
         )}
 
@@ -1082,7 +1122,8 @@ function GuitarStageImage() {
           />
         )}
 
-        {/* Сама гитара. Пивот у основания: она опирается на пол и клонится, а не крутится вокруг центра */}
+        {/* Сама гитара. Пивот у основания: она опирается на пол и клонится, а не крутится вокруг центра.
+            Только 2D-трансформации (без perspective/rotateY): они стабильно идут на GPU */}
         <div className="absolute inset-0 flex items-center justify-center">
           <div
             className="relative will-change-transform"
@@ -1092,16 +1133,14 @@ function GuitarStageImage() {
               opacity: `calc(${g.pinOpacity} + ${1 - g.pinOpacity} * ${S})`,
               transformOrigin: "50% 100%",
               transform:
-                `perspective(1100px) ` +
-                `translateX(calc((1 - ${S}) * ${g.pinX}vw)) ` +
+                `translate3d(calc((1 - ${S}) * ${g.pinX}vw), 0, 0) ` +
                 `rotate(calc(${R} * 1deg)) ` +
-                `rotateY(calc(${R} * ${-g.yaw}deg)) ` +
                 `scale(calc(1 + ${g.pinScale - 1} * (1 - ${S})))`,
             }}
           >
             {/* Внутренний слой: едва заметное «живое» покачивание */}
             <div
-              className="absolute inset-0"
+              className="absolute inset-0 will-change-transform"
               style={{
                 transformOrigin: "50% 100%",
                 animation: alive && g.idle ? "rl-sway 6s ease-in-out infinite alternate" : undefined,
@@ -1118,6 +1157,7 @@ function GuitarStageImage() {
                     ...STAGE_IMG,
                     opacity: `calc(${P} * ${P})`,
                     filter: `drop-shadow(0 0 ${g.rimSize}px rgba(${g.glowRgb},${g.rim}))`,
+                    willChange: "opacity",
                   }}
                 />
               )}
@@ -1565,7 +1605,7 @@ export default function Landing() {
                 (guitarStage ? "gap-x-12" : "gap-12")
               }
               // на мобиле: строка 1 = текст, строка 2 = «посадочная зона» для гитары
-              style={guitarStage ? { gridTemplateRows: `auto ${GUITAR_STAGE.slot}` } : undefined}
+              style={guitarStage ? { gridTemplateRows: stageRows(reduceMotion) } : undefined}
             >
               <div
                 className={"flex flex-col justify-center " + (guitarStage ? "relative z-10 pb-6" : "")}
