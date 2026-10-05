@@ -75,6 +75,8 @@ const TONE: Record<Tone, Record<ToneKey, string>> = {
 
 // ─── Позиционирование инструмента в секции PRICING
 const PRICING_ART = {
+  // guitar: в вёрстке не используется (гитара рисуется компонентом PricingGuitar, настройки в PRICING_GUITAR);
+  // запись оставлена, чтобы тип ModeConfig["pricing"]["art"] не менялся
   guitar: {
     src: jetImg,
     alt: "Guitar",
@@ -1250,6 +1252,245 @@ function GuitarTiltImage() {
   return <GuitarStageImage />;
 }
 
+/**
+ * Гитара в прайсе: «ложится» на оранжевый постер.
+ *
+ * Раньше: фото повёрнуто на 60° и шире экрана (130vw), кузов обрезан, положение подобрано
+ * магическими отступами, анимации нет, поэтому выглядело случайно.
+ *
+ * Теперь:
+ *  - гитара целиком в кадре, лежит наискосок (угол to: 0 = стоит, 90 = лежит горизонтально),
+ *    головка уходит вправо-вверх и выступает над швом секции в чёрную зону: оранжевое дерево
+ *    на чёрном, а корпус уже на оранжевом. Шов пересекается намеренно, а не «как получилось»
+ *  - угол можно менять одной цифрой (to): положение, выступ головки над швом, место под гитарой и
+ *    свечение считаются от него сами (см. геометрию ниже), ничего подгонять руками не надо
+ *  - по скроллу она «падает» на плоскость и ложится: чуть крупнее → обычный размер, наклон
+ *    доходит до финального с лёгким перелётом и возвращается, тень стягивается к ней и темнеет
+ *    (глубина), по матовому корпусу один раз проходит блик
+ *  - потом едва заметно покачивается
+ *
+ * Всё считается от положения на экране и пишется в CSS-переменные без setState; инерция как в
+ * секции оборудования. Анимируются только transform и opacity.
+ *   --t  0..1  прогресс «посадки»
+ *   --r  deg   наклон (плюс = верх гитары вправо)
+ */
+const PRICING_GUITAR = {
+  size: "min(100vw, 600px)", // сторона квадрата JET.png
+  // ── геометрия силуэта в JET.png, доли стороны квадрата (снято с фото). Нужна только для расчёта места
+  len: 0.93, // длина гитары вдоль оси; ось проходит через центр квадрата
+  headW: 0.06, // ширина головки
+  bodyW: 0.33, // ширина корпуса в самом широком месте
+  bodyHorn: 0, // где «рога» корпуса: на сколько ниже центра квадрата вдоль оси (у этого фото ровно на уровне центра)
+  bodyR: 0.12, // скругление нижней части корпуса
+  // ── положение
+  aboveMax: "clamp(56px, 18vw, 72px)", // на сколько макушка головки МОЖЕТ выступать над швом. Выше нельзя: там кнопка «Записаться к преподавателю»
+  bodyMargin: "10px", // чёрный корпус не должен заходить на чёрный фон: он всегда ниже шва минимум на столько.
+  // Поэтому чем горизонтальнее гитара, тем меньше выступает головка, а при ~75° гитара уже целиком на оранжевом
+  gap: "28px", // отступ от низа гитары до заголовка «Guitar Lessons»
+  // ── угол и посадка
+  from: 44, // deg в начале (меньше to = гитара «падает» и ложится; больше to = «оседает» вверх)
+  to: 60, // deg в конце. 0 = стоит, 90 = лежит горизонтально (плюс = головка вправо). Разумно 50–68
+  bump: 2.5, // deg, «касание»: чуть проходит финальный угол и возвращается (0 = без)
+  scale: 1.06, // в начале чуть крупнее (ближе к камере), к концу садится на плоскость
+  start: 0.9, // доля высоты экрана: верх блока вошёл снизу, анимация началась
+  end: 0.3, // верх блока дошёл сюда, анимация закончена (больше разница = дольше)
+  smooth: 0.1, // сек, инерция
+  // тень: смещение px и прозрачность в конце (near) и в начале (far, гитара «выше» над плоскостью)
+  shadowNear: { dx: 18, dy: 26, o: 0.4 },
+  shadowFar: { dx: 40, dy: 58, o: 0.18 },
+  shadowBlur: 14, // px
+  gloss: 0.5, // яркость блика (0 = выключить)
+  bloom: 0.4, // яркость тёплого свечения за гитарой на оранжевом (0 = выключить)
+  idle: true, // покачивание
+};
+
+/**
+ * Геометрия при финальном угле: сколько гитара занимает от центра квадрата вверх, вниз и в стороны
+ * (доли size). Модель: головка + корпус как прямоугольник со скруглённым низом.
+ * Положение считается так, чтобы головка выступала над швом на aboveMax, но корпус при этом
+ * оставался на оранжевом (иначе чёрное на чёрном пропадает).
+ */
+const PG = PRICING_GUITAR;
+const PG_RAD = (PG.to * Math.PI) / 180;
+const PG_SIN = Math.abs(Math.sin(PG_RAD));
+const PG_COS = Math.abs(Math.cos(PG_RAD));
+const PG_HEAD_UP = (PG.len / 2) * PG_COS + (PG.headW / 2) * PG_SIN; // макушка головки
+const PG_BODY_UP = Math.max(0, (PG.bodyW / 2) * PG_SIN - PG.bodyHorn * PG_COS); // верхний «рог» корпуса
+const PG_DOWN = Math.max(
+  (PG.len / 2) * PG_COS, // нижний торец
+  (PG.len / 2 - PG.bodyR) * PG_COS + (PG.bodyW / 2 - PG.bodyR) * PG_SIN + PG.bodyR, // скруглённый низ корпуса
+);
+const PG_LEFT = Math.max(
+  (PG.len / 2) * PG_SIN,
+  (PG.len / 2 - PG.bodyR) * PG_SIN + (PG.bodyW / 2 - PG.bodyR) * PG_COS + PG.bodyR,
+);
+const PG_RIGHT = (PG.len / 2) * PG_SIN + (PG.headW / 2) * PG_COS;
+/** Сдвиг по горизонтали, чтобы силуэт стоял по центру (он несимметричен: слева корпус, справа головка) */
+const PG_SHIFT = (PG_LEFT - PG_RIGHT) / 2;
+
+/** Расстояние от шва вниз до центра квадрата */
+const PG_CY = `max(calc(${PG_HEAD_UP} * ${PG.size} - ${PG.aboveMax}), calc(${PG_BODY_UP} * ${PG.size} + ${PG.bodyMargin}))`;
+/** Высота места под гитарой в потоке: от шва до заголовка (гитара лежит absolute, поэтому нужна «распорка») */
+const PRICING_GUITAR_SPACER = `calc(${PG_CY} + ${PG_DOWN} * ${PG.size} + ${PG.gap})`;
+/** Где в квадрате проходит шов секции (от верха квадрата вниз) */
+const PG_SEAM_Y = `calc(0.5 * ${PG.size} - ${PG_CY})`;
+
+function PricingGuitar() {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+  const g = PRICING_GUITAR;
+  const alive = !reduceMotion;
+
+  useIsoLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    if (reduceMotion) {
+      root.style.setProperty("--t", "1");
+      root.style.setProperty("--r", String(g.to));
+      return;
+    }
+    const clamp = (x: number, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, x));
+    const smooth = (x: number) => {
+      const v = clamp(x);
+      return v * v * (3 - 2 * v);
+    };
+    const render = (t: number) => {
+      const T = smooth(t);
+      const bump = g.bump * Math.pow(Math.sin(Math.PI * clamp((t - 0.55) / 0.45)), 2);
+      root.style.setProperty("--t", T.toFixed(4));
+      root.style.setProperty("--r", (g.from + (g.to - g.from) * T + bump).toFixed(2));
+    };
+    const computeT = () => {
+      const vh = window.innerHeight;
+      const top = root.getBoundingClientRect().top;
+      return clamp((vh * g.start - top) / (vh * (g.start - g.end)));
+    };
+
+    // Инерция: значение догоняет цель по экспоненте (не зависит от частоты кадров)
+    let target = computeT();
+    let cur = target;
+    let last = 0;
+    let raf = 0;
+    const tick = (now: number) => {
+      const dt = Math.min(0.05, (now - last) / 1000 || 0.016);
+      last = now;
+      cur += (target - cur) * (1 - Math.exp(-dt / g.smooth));
+      if (Math.abs(target - cur) < 0.0004) {
+        cur = target;
+        raf = 0;
+      } else {
+        raf = requestAnimationFrame(tick);
+      }
+      render(cur);
+    };
+    const onScroll = () => {
+      target = computeT();
+      if (!raf) {
+        last = performance.now();
+        raf = requestAnimationFrame(tick);
+      }
+    };
+    const onResize = () => {
+      target = cur = computeT();
+      render(cur);
+    };
+    render(cur);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [reduceMotion, g.start, g.end, g.from, g.to, g.bump, g.smooth]);
+
+  // Значения по умолчанию в var() = финальное состояние: без JS и до первого кадра гитара уже на месте
+  const T = "var(--t, 1)";
+  const R = `var(--r, ${g.to})`;
+  const far = `(1 - ${T})`;
+  const sh = (near: number, farV: number) => `calc(${near}px + ${farV - near}px * ${far})`;
+  const sc = `scale(calc(1 + ${g.scale - 1} * ${far}))`;
+
+  return (
+    // absolute от верха секции (= шва): положение не зависит от паддингов, а головка выступает вверх на above
+    <div
+      ref={rootRef}
+      className="absolute inset-x-0 mx-auto pointer-events-none z-10"
+      style={{
+        width: g.size,
+        height: g.size,
+        top: `calc(-1 * ${PG_SEAM_Y})`,
+        transform: `translateX(calc(${PG_SHIFT} * ${g.size}))`,
+      }}
+    >
+      {alive && <style>{STAGE_KEYFRAMES}</style>}
+
+      {/* Тёплое свечение за гитарой («студийный свет»). Начинается ровно на шве и идёт вниз до заголовка,
+          поэтому на чёрную зону выше не заходит (светлый тон на чёрном выглядел бы серым пятном).
+          Центр свечения = центр гитары, он зависит от угла */}
+      {g.bloom > 0 && (
+        <div
+          className="absolute"
+          style={{
+            left: "-30%",
+            right: "-30%",
+            top: PG_SEAM_Y,
+            height: PRICING_GUITAR_SPACER,
+            opacity: `calc(0.5 + 0.5 * ${T})`,
+            background: `radial-gradient(ellipse 40% 80% at 50% ${PG_CY}, rgba(255,205,140,${g.bloom}), transparent 70%)`,
+          }}
+        />
+      )}
+
+      {/* Тень на плоскости: чёрный силуэт, статичное размытие. Едет по transform, свет всегда сверху-слева */}
+      <img
+        src={jetImg}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 w-full h-full will-change-transform"
+        style={{
+          ...STAGE_IMG,
+          filter: `brightness(0) blur(${g.shadowBlur}px)`,
+          opacity: `calc(${g.shadowNear.o} + ${g.shadowFar.o - g.shadowNear.o} * ${far})`,
+          transform:
+            `translate3d(${sh(g.shadowNear.dx, g.shadowFar.dx)}, ${sh(g.shadowNear.dy, g.shadowFar.dy)}, 0) ` +
+            `rotate(calc(${R} * 1deg)) ${sc}`,
+        }}
+      />
+
+      {/* Гитара */}
+      <div
+        className="absolute inset-0 will-change-transform"
+        style={{ transform: `rotate(calc(${R} * 1deg)) ${sc}` }}
+      >
+        <div
+          className="absolute inset-0"
+          style={{ animation: alive && g.idle ? "rl-sway 6s ease-in-out infinite alternate" : undefined }}
+        >
+          <img src={jetImg} alt="Электрогитара Jet" className="absolute inset-0 w-full h-full" style={STAGE_IMG} />
+          {g.gloss > 0 && (
+            // Маска по форме гитары статичная, полоса света едет через transform; видна в середине пути
+            <div
+              className="absolute inset-0 overflow-hidden"
+              style={{ ...STAGE_MASK, opacity: `calc(${g.gloss} * 4 * ${T} * (1 - ${T}))` }}
+            >
+              <div
+                className="absolute top-0 bottom-0 left-0 will-change-transform"
+                style={{
+                  width: "70%",
+                  transform: `translate3d(calc(136% - 229% * ${T}), 0, 0) skewX(-14deg)`,
+                  background:
+                    "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 35%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0.3) 65%, transparent 100%)",
+                }}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DrumSideImage() {
   return (
     <div className="relative flex items-center justify-center overflow-hidden min-h-[450px] group">
@@ -1755,6 +1996,8 @@ export default function Landing() {
       <section
         id="pricing"
         className={"relative pt-4 sm:pt-10 pb-24 px-6 overflow-visible transition-colors duration-700 " + t.bg}
+        // у гитары верхний отступ задаёт распорка под ней (гитара absolute от шва)
+        style={mode === "guitar" ? { paddingTop: 0 } : undefined}
       >
         {/* Декоративные линии фона (струны) */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-30 z-0">
@@ -1772,6 +2015,12 @@ export default function Landing() {
         </div>
 
         {/* Инструмент — визуально пересекает границу секций */}
+        {mode === "guitar" ? (
+          <>
+            <PricingGuitar />
+            <div aria-hidden="true" style={{ height: PRICING_GUITAR_SPACER }} />
+          </>
+        ) : (
         <div className="max-w-3xl mx-auto relative z-10 flex flex-col items-center">
           <div
             className="pointer-events-none z-10 drop-shadow-[0_20px_30px_rgba(0,0,0,0.4)]"
@@ -1791,6 +2040,7 @@ export default function Landing() {
             />
           </div>
         </div>
+        )}
 
         <Reveal className="max-w-3xl mx-auto relative z-10 flex flex-col items-center">
           {/* Заголовок */}
