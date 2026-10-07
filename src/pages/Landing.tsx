@@ -1,5 +1,5 @@
-import { forwardRef, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
-import type { ComponentType, CSSProperties, ReactNode, RefObject } from "react";
+import { forwardRef, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import type { ComponentType, CSSProperties, MouseEvent as ReactMouseEvent, ReactNode, RefObject } from "react";
 import jetImg from "../assets/JET.png";
 import guitarTeacherImg from "../assets/teacher_riff.jpg";
 import teacherDrumImg from "../assets/drum_teacher.png";
@@ -388,6 +388,107 @@ function PracticeBlock({ data, tone }: { data: PracticeData; tone: Tone }) {
  * ПРЕПОДАВАТЕЛЬ
  * ───────────────────────────────────────────────────────────── */
 
+/**
+ * Пропуск «ALL ACCESS».
+ *
+ * Одна карточка на всё время жизни страницы (не пересоздаётся), но выход проигрывается КАЖДЫЙ раз:
+ *  • при первом появлении в экране;
+ *  • при каждой смене студии (старый пропуск улетает, новый вылетает);
+ *  • когда пролистала мимо и вернулась к блоку.
+ *
+ * Выход: пропуск вылетает сбоку с 3D-поворотом и размытием, врезается в место с перелётом
+ * и отскоком. В момент удара: вспышка свечения, две ударные волны, россыпь искр и лёгкая тряска.
+ * Потом фото «проявляется» из ч/б, по карточке проходит сканер, и строки данных появляются,
+ * когда до них доходит луч. Гитара вылетает слева, барабаны справа.
+ *
+ * Анимируются только opacity, transform и filter. При prefers-reduced-motion показывается готовый статичный пропуск.
+ */
+const PASS = {
+  tilt: -2, // deg, лёгкий наклон в покое
+  flyDur: 0.95, // сек, длительность вылета
+  impact: 0.57, // сек, момент удара (вспышка, волны, искры). Совпадает с ~60% вылета
+  swapOut: 260, // мс, как быстро улетает старый пропуск при смене студии
+  sparks: 26, // сколько искр
+  sparkDist: [90, 260], // px, дальность полёта искр (от, до)
+  shake: 5, // px, сила тряски в момент удара (0 = выключить)
+  scan: { delay: 0.85, dur: 1.1 }, // сек: когда стартует и сколько идёт линия сканера (после приземления)
+  develop: { delay: 0.65, dur: 1.2 }, // сек: когда начинает и сколько «проявляется» фото
+};
+
+// ключевые кадры: вылет дублируется под двумя именами (a/b), чтобы анимация перезапускалась на том же элементе
+const passFly = (n: string) => `
+@keyframes ${n} {
+  0% {
+    opacity: 0;
+    filter: blur(10px) brightness(1.8);
+    transform: perspective(1000px) translate3d(calc(var(--dir) * min(300px, 55vw)), 150px, -320px)
+      rotateY(calc(var(--dir) * -70deg)) rotateZ(calc(var(--dir) * 18deg)) scale(0.55);
+  }
+  40% { opacity: 1; }
+  60% {
+    opacity: 1;
+    filter: blur(0) brightness(1.15);
+    transform: perspective(1000px) translate3d(calc(var(--dir) * -12px), -12px, 0)
+      rotateY(calc(var(--dir) * 7deg)) rotateZ(calc(var(--tilt) * 1deg - 3deg)) scale(1.09);
+  }
+  78% {
+    filter: blur(0) brightness(1);
+    transform: perspective(1000px) translate3d(0, 6px, 0)
+      rotateY(calc(var(--dir) * -2deg)) rotateZ(calc(var(--tilt) * 1deg + 1deg)) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0) brightness(1);
+    transform: perspective(1000px) translate3d(0, 0, 0) rotateY(0deg) rotateZ(calc(var(--tilt) * 1deg)) scale(1);
+  }
+}`;
+
+const passShake = (n: string, px: number) => `
+@keyframes ${n} {
+  0% { transform: translate3d(0, 0, 0); }
+  20% { transform: translate3d(${px}px, ${-px}px, 0); }
+  40% { transform: translate3d(${-px}px, ${px * 0.6}px, 0); }
+  60% { transform: translate3d(${px * 0.5}px, ${px * 0.3}px, 0); }
+  80% { transform: translate3d(${-px * 0.3}px, 0, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}`;
+
+const PASS_KEYFRAMES = `
+${passFly("rl-pass-fly-a")}
+${passFly("rl-pass-fly-b")}
+${passShake("rl-pass-shake-a", PASS.shake)}
+${passShake("rl-pass-shake-b", PASS.shake)}
+@keyframes rl-pass-out {
+  to {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translate3d(calc(var(--dir) * -1 * min(260px, 45vw)), 30px, 0)
+      rotate(calc(var(--dir) * -12deg)) scale(0.8);
+  }
+}
+@keyframes rl-pass-scan {
+  from { transform: translateY(-100%); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  to { transform: translateY(0); opacity: 0; }
+}
+@keyframes rl-pass-flash {
+  from { opacity: 0; }
+  20% { opacity: 0.95; }
+  to { opacity: 0; }
+}
+@keyframes rl-pass-ring {
+  from { opacity: 0.9; transform: scale(1); }
+  to { opacity: 0; transform: scale(var(--s, 1.4)); }
+}
+@keyframes rl-pass-spark {
+  from { opacity: 1; transform: translate(-50%, -50%) translate(0, 0) scale(1); }
+  70% { opacity: 1; }
+  to { opacity: 0; transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) scale(0.15); }
+}`;
+
+type PassData = { photo: string; role: string; fields: [string, string][]; tone: Tone };
+
 function TeacherPass({
   photo,
   role,
@@ -401,27 +502,620 @@ function TeacherPass({
   fields: [string, string][];
   color?: boolean;
 }) {
-  const t = TONE[tone];
+  const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+  const rootRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const timers = useRef<number[]>([]);
+  const armed = useRef(true); // можно проиграть выход заново (блок успел уйти из экрана)
+  // static: всё видно сразу (reduced-motion, до JS); pre: ждём появления в экране; run: показан
+  const [phase, setPhase] = useState<"static" | "pre" | "run">("static");
+  // то, что сейчас нарисовано. Отстаёт от пропсов, пока старый пропуск улетает
+  const [shown, setShown] = useState<PassData>({ photo, role, fields, tone });
+  const [leaving, setLeaving] = useState(false);
+  const [revealed, setRevealed] = useState(false); // фото проявлено, строки и подпись показаны
+  const [playId, setPlayId] = useState(0); // номер проигрывания выхода (0 = ещё не было)
+
+  const t = TONE[shown.tone];
+  const dir = tone === "orange" ? -1 : 1; // гитара летит слева, барабаны справа
+  const ab = playId % 2 ? "a" : "b";
+
+  // запустить выход заново (опционально сразу с новым содержимым)
+  const play = useCallback((next?: PassData) => {
+    if (next) setShown(next);
+    setLeaving(false);
+    setRevealed(false);
+    setPlayId((n) => n + 1);
+    timers.current.push(window.setTimeout(() => setRevealed(true), 60));
+  }, []);
+
+  // до первой отрисовки прячем карточку, чтобы не мигнуло
+  useIsoLayoutEffect(() => {
+    setPhase(reduceMotion ? "static" : "pre");
+  }, [reduceMotion]);
+
+  // выход при появлении в экране: и в первый раз, и после того как ушла из блока и вернулась
+  useEffect(() => {
+    if (reduceMotion) return;
+    const root = rootRef.current;
+    if (!root) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
+          if (!armed.current) return;
+          armed.current = false;
+          setPhase("run");
+          play();
+        } else {
+          armed.current = true;
+        }
+      },
+      { threshold: 0, rootMargin: "0px 0px -80px 0px" },
+    );
+    io.observe(root);
+    return () => io.disconnect();
+  }, [reduceMotion, play]);
+
+  // смена студии: старый пропуск улетает, потом подставляем новое и вылетает новый
+  useEffect(() => {
+    if (photo === shown.photo && role === shown.role) {
+      setLeaving(false); // быстро переключили туда-обратно: просто остаёмся
+      return;
+    }
+    const next: PassData = { photo, role, fields, tone };
+    if (reduceMotion || phase !== "run") {
+      setShown(next); // ещё не показан или без анимации: меняем сразу
+      return;
+    }
+    setLeaving(true);
+    const id = window.setTimeout(() => play(next), PASS.swapOut);
+    return () => window.clearTimeout(id);
+  }, [photo, role, fields, tone, shown.photo, shown.role, phase, reduceMotion, play]);
+
+  useEffect(
+    () => () => {
+      timers.current.forEach(window.clearTimeout);
+    },
+    [],
+  );
+
+  // искры: новый набор на каждое проигрывание. Стартуют с краёв карточки и летят наружу
+  const sparks = useMemo(() => {
+    if (!playId) return [];
+    return Array.from({ length: PASS.sparks }, () => {
+      const a = Math.random() * Math.PI * 2;
+      const cx = Math.cos(a);
+      const cy = Math.sin(a);
+      const dist = PASS.sparkDist[0] + Math.random() * (PASS.sparkDist[1] - PASS.sparkDist[0]);
+      return {
+        x: 50 + Math.max(-50, Math.min(50, cx * 70)),
+        y: 50 + Math.max(-50, Math.min(50, cy * 70)),
+        dx: cx * dist,
+        dy: cy * dist + 40 + Math.random() * 40, // чуть падают вниз, как настоящие искры
+        size: 2 + Math.random() * 4,
+        dur: 0.55 + Math.random() * 0.55,
+        delay: Math.random() * 0.06,
+        hot: Math.random() < 0.35, // часть искр белая, раскалённая
+      };
+    });
+  }, [playId]);
+
+  const anim = phase !== "static";
+  const hidden = phase === "pre";
+  const fx = phase === "run" && !leaving && playId > 0;
+
+  // строки данных появляются, когда до них доходит линия сканера: считаем по положению строки в карточке
+  useIsoLayoutEffect(() => {
+    const card = cardRef.current;
+    if (!card) return;
+    const h = card.offsetHeight || 1;
+    rowRefs.current.forEach((row) => {
+      if (!row) return;
+      if (!revealed) {
+        row.style.transitionDelay = "0s";
+        return;
+      }
+      const f = Math.max(0, Math.min(1, (row.offsetTop + row.offsetHeight / 2) / h));
+      row.style.transitionDelay = `${(PASS.scan.delay + PASS.scan.dur * f).toFixed(2)}s`;
+    });
+  }, [revealed, shown]);
+
+  const flyStyle: CSSProperties = !anim
+    ? { transform: `rotate(${PASS.tilt}deg)` }
+    : hidden
+      ? { opacity: 0, transform: `rotate(${PASS.tilt}deg)` }
+      : leaving
+        ? { animation: `rl-pass-out ${PASS.swapOut}ms cubic-bezier(0.5, 0, 1, 0.6) both` }
+        : { animation: `rl-pass-fly-${ab} ${PASS.flyDur}s cubic-bezier(0.2, 0.8, 0.3, 1) both` };
+
+  const rowCls = "flex justify-between gap-3 text-xs rl-mono transition-[opacity,transform] duration-300 ";
+
   return (
-    <div className={"relative mx-auto max-w-sm rotate-[-3deg] rounded-3xl border-2 bg-rl-card p-2 shadow-2xl " + t.border}>
-      <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-rl-bg border-2 border-rl-line z-10" />
-      <div className="rounded-2xl overflow-hidden bg-rl-card">
-        <div className="aspect-[3/4] relative">
-          <img src={photo} alt={role} className={"w-full h-full object-cover " + (color ? "" : "grayscale")} />
-          <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-rl-card to-transparent" />
-        </div>
-        <div className="p-5">
-          <div className={"rl-mono text-[10px] mb-3 tracking-widest " + t.text}>ALL ACCESS · {role}</div>
-          <div className="space-y-2 border-t border-rl-line pt-3">
-            {fields.map(([k, v]) => (
-              <div key={k} className="flex justify-between gap-3 text-xs rl-mono">
-                <span className="text-rl-muted shrink-0">{k}</span>
-                <span className="text-right">{v}</span>
+    <div
+      ref={rootRef}
+      className="relative mx-auto max-w-sm"
+      style={{ "--c": t.cssVar, "--dir": dir, "--tilt": PASS.tilt } as CSSProperties}
+    >
+      {anim && <style>{PASS_KEYFRAMES}</style>}
+
+      {/* тряска в момент удара */}
+      <div style={fx && PASS.shake > 0 ? { animation: `rl-pass-shake-${ab} 0.35s ease-out ${PASS.impact}s both` } : undefined}>
+        <div style={{ ...flyStyle, willChange: anim ? "transform, opacity, filter" : undefined }}>
+          <div
+            ref={cardRef}
+            className={"relative rounded-3xl border-2 bg-rl-card p-2 shadow-2xl transition-colors duration-500 " + t.border}
+          >
+            {/* Вспышка свечения в момент удара */}
+            {fx && (
+              <div
+                key={playId}
+                aria-hidden="true"
+                className="absolute -inset-1 rounded-[28px] pointer-events-none"
+                style={{
+                  boxShadow: "0 0 70px 12px var(--c)",
+                  animation: `rl-pass-flash 0.9s ease-out ${PASS.impact - 0.05}s both`,
+                }}
+              />
+            )}
+
+            <div className="rounded-2xl overflow-hidden bg-rl-card">
+              <div className="aspect-[3/4] relative">
+                <img
+                  src={shown.photo}
+                  alt={shown.role}
+                  className={"w-full h-full object-cover " + (color ? "" : "grayscale")}
+                />
+                {/* «Проявление»: тёмная ч/б копия поверх цветного фото плавно растворяется (только opacity) */}
+                {color && anim && (
+                  <img
+                    src={shown.photo}
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 w-full h-full object-cover grayscale brightness-75 contrast-125 transition-opacity ease-out"
+                    style={{
+                      opacity: revealed ? 0 : 1,
+                      transitionDuration: revealed ? `${PASS.develop.dur}s` : "0s",
+                      transitionDelay: revealed ? `${PASS.develop.delay}s` : "0s",
+                    }}
+                  />
+                )}
+                <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-rl-card to-transparent" />
               </div>
-            ))}
+              <div className="p-5">
+                <div
+                  className={"rl-mono text-[10px] mb-3 tracking-widest transition-opacity duration-300 " + t.text}
+                  style={{
+                    opacity: anim && !revealed ? 0 : 1,
+                    transitionDelay: revealed ? `${PASS.impact}s` : "0s",
+                  }}
+                >
+                  ALL ACCESS · {shown.role}
+                </div>
+                <div className="space-y-2 border-t border-rl-line pt-3">
+                  {shown.fields.map(([k, v], i) => (
+                    <div
+                      key={k}
+                      ref={(el) => {
+                        rowRefs.current[i] = el;
+                      }}
+                      className={rowCls + (anim && !revealed ? "opacity-0 translate-y-1.5" : "opacity-100 translate-y-0")}
+                    >
+                      <span className="text-rl-muted shrink-0">{k}</span>
+                      <span className="text-right">{v}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Сканер: проход сверху вниз после приземления. Слой высотой в карточку едет от -100% до 0, линия на его нижнем краю */}
+            {fx && revealed && (
+              <div aria-hidden="true" className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none z-20">
+                <div
+                  key={playId}
+                  className="absolute inset-0"
+                  style={{ animation: `rl-pass-scan ${PASS.scan.dur}s ${PASS.scan.delay}s linear both`, opacity: 0 }}
+                >
+                  <div
+                    className="absolute inset-0"
+                    style={{ background: "linear-gradient(to bottom, transparent 70%, var(--c) 100%)", opacity: 0.18 }}
+                  />
+                  <div
+                    className="absolute inset-x-0 bottom-0"
+                    style={{ height: 2, background: "var(--c)", boxShadow: "0 0 16px 3px var(--c)" }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Эффекты удара живут вне качающейся карточки: ударные волны и искры от краёв пропуска */}
+      {fx && (
+        <div key={playId} aria-hidden="true" className="absolute inset-0 pointer-events-none z-30">
+          <div
+            className="absolute inset-0 rounded-3xl"
+            style={
+              {
+                border: "2px solid var(--c)",
+                "--s": 1.35,
+                animation: `rl-pass-ring 0.75s ease-out ${PASS.impact}s both`,
+              } as CSSProperties
+            }
+          />
+          <div
+            className="absolute inset-0 rounded-3xl"
+            style={
+              {
+                border: "1px solid var(--c)",
+                "--s": 1.75,
+                animation: `rl-pass-ring 0.95s ease-out ${PASS.impact + 0.08}s both`,
+              } as CSSProperties
+            }
+          />
+          {sparks.map((s, i) => (
+            <span
+              key={i}
+              className="absolute rounded-full"
+              style={
+                {
+                  left: `${s.x}%`,
+                  top: `${s.y}%`,
+                  width: s.size,
+                  height: s.size,
+                  background: s.hot ? "#fff" : "var(--c)",
+                  boxShadow: s.hot ? "0 0 8px 2px rgba(255,255,255,0.9)" : "0 0 8px 2px var(--c)",
+                  "--dx": `${s.dx.toFixed(1)}px`,
+                  "--dy": `${s.dy.toFixed(1)}px`,
+                  animation: `rl-pass-spark ${s.dur.toFixed(2)}s cubic-bezier(0.1, 0.7, 0.3, 1) ${(PASS.impact + s.delay).toFixed(2)}s both`,
+                } as CSSProperties
+              }
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * БАРАБАН В ПРАЙСЕ
+ * ───────────────────────────────────────────────────────────── */
+
+/**
+ * Малый барабан в секции PRICING (режим «барабаны»). Без звука.
+ *
+ *  1. Падение. Барабан «падает с камеры»: летит сверху, уменьшаясь, бьётся о шов секции,
+ *     подпрыгивает и успокаивается. В момент удара: вспышка, три ударные волны, россыпь осколков.
+ *     Проигрывается КАЖДЫЙ раз: при смене студии на барабаны и когда вернулась к блоку после скролла.
+ *  2. Пульс. Дальше он «дышит» в ритм 4/4: лёгкий толчок на каждую долю, акцент на первой
+ *     плюс тонкое кольцо раз в такт.
+ *  3. Удар по клику. Тап или клик по барабану: он вдавливается от точки касания, подпрыгивает,
+ *     по нему расходится кольцо и разлетаются осколки. Работает и с клавиатуры (Enter / Space).
+ *
+ * Слои transform независимы (падение → удар → пульс → картинка), поэтому не мешают друг другу.
+ * Волны красные на красном фоне не видны, поэтому белые и тёмные. Тень (drop-shadow) стоит на самой
+ * картинке: так браузер кэширует её и не пересчитывает каждый кадр. При prefers-reduced-motion
+ * показывается обычная картинка.
+ */
+const DRUM = {
+  circle: 0.86, // доля ширины картинки, которую занимает корпус (кликабельная зона и волны). Подгони, если мимо
+  dropFrom: 520, // px, с какой высоты начинает падать
+  dropDur: 1.1, // сек
+  impactAt: 0.52, // доля падения, когда барабан бьётся (совпадает с ключевым кадром 52%)
+  beat: 2, // сек, один такт 4/4 (120 bpm)
+  bigSparks: 14, // осколки при падении
+  hitSparks: 8, // осколки при клике
+  dark: "#1A1A1A",
+  light: "#fff",
+};
+
+const drumDrop = (n: string) => `
+@keyframes ${n} {
+  0% { transform: translate3d(0, -${DRUM.dropFrom}px, 0) scale(1.7) rotate(-14deg); animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45); }
+  52% { transform: translate3d(0, 0, 0) scale(1) rotate(2deg); animation-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1); }
+  66% { transform: translate3d(0, 0, 0) scale(1.1) rotate(-1deg); animation-timing-function: ease-in-out; }
+  80% { transform: translate3d(0, 0, 0) scale(0.975) rotate(0.5deg); animation-timing-function: ease-in-out; }
+  91% { transform: translate3d(0, 0, 0) scale(1.015) rotate(0deg); animation-timing-function: ease-in-out; }
+  100% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+}`;
+const drumFade = (n: string) => `@keyframes ${n} { from { opacity: 0; } to { opacity: 1; } }`;
+const drumHit = (n: string) => `
+@keyframes ${n} {
+  0% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+  22% { transform: translate3d(var(--hx), var(--hy), 0) scale(0.93) rotate(var(--hr)); }
+  60% { transform: translate3d(0, 0, 0) scale(1.04) rotate(0deg); }
+  100% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+}`;
+const drumIdle = (n: string) => `
+@keyframes ${n} {
+  0%, 100% { transform: scale(1.035); }
+  12% { transform: scale(1); }
+  25% { transform: scale(1.015); }
+  37% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  62% { transform: scale(1); }
+  75% { transform: scale(1.015); }
+  87% { transform: scale(1); }
+}`;
+const drumPulse = (n: string) => `
+@keyframes ${n} {
+  0% { opacity: 0.4; transform: scale(1); }
+  35% { opacity: 0; transform: scale(1.22); }
+  100% { opacity: 0; transform: scale(1.22); }
+}`;
+
+const DRUM_KEYFRAMES = `
+${drumDrop("rl-drum-drop-a")}
+${drumDrop("rl-drum-drop-b")}
+${drumFade("rl-drum-fade-a")}
+${drumFade("rl-drum-fade-b")}
+${drumHit("rl-drum-hit-a")}
+${drumHit("rl-drum-hit-b")}
+${drumIdle("rl-drum-idle-a")}
+${drumIdle("rl-drum-idle-b")}
+${drumPulse("rl-drum-pulse-a")}
+${drumPulse("rl-drum-pulse-b")}
+@keyframes rl-drum-ring {
+  from { opacity: 0.9; transform: scale(1); }
+  to { opacity: 0; transform: scale(var(--s, 1.6)); }
+}
+@keyframes rl-drum-flash {
+  from { opacity: 0.85; transform: scale(0.7); }
+  to { opacity: 0; transform: scale(1.35); }
+}
+@keyframes rl-drum-spark {
+  from { opacity: 1; transform: translate(-50%, -50%) translate(0, 0) scale(1); }
+  70% { opacity: 1; }
+  to { opacity: 0; transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) scale(0.2); }
+}`;
+
+/** Осколки: стартуют с кромки барабана и летят наружу, чуть падая вниз. */
+function drumBurst(n: number, dist: [number, number], rim: number) {
+  return Array.from({ length: n }, () => {
+    const a = Math.random() * Math.PI * 2;
+    const d = dist[0] + Math.random() * (dist[1] - dist[0]);
+    return {
+      x: 50 + Math.cos(a) * rim * 50,
+      y: 50 + Math.sin(a) * rim * 50,
+      dx: Math.cos(a) * d,
+      dy: Math.sin(a) * d + 30 + Math.random() * 40,
+      size: 4 + Math.random() * 6,
+      dur: 0.6 + Math.random() * 0.5,
+      delay: Math.random() * 0.05,
+      light: Math.random() < 0.5,
+    };
+  });
+}
+
+function PricingDrum({ src, alt, rotate, scale }: { src: string; alt: string; rotate: number; scale: number }) {
+  const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+  const rootRef = useRef<HTMLDivElement>(null);
+  const armed = useRef(true); // можно проиграть падение заново (блок успел уйти из экрана)
+  // static: просто картинка (reduced-motion, до JS); pre: ждём появления; run: показан
+  const [phase, setPhase] = useState<"static" | "pre" | "run">("static");
+  const [playId, setPlayId] = useState(0);
+  const [visible, setVisible] = useState(false); // пульс крутится только пока барабан в экране
+  const [hit, setHit] = useState<{ id: number; hx: number; hy: number; hr: number } | null>(null);
+
+  const ab = playId % 2 ? "a" : "b";
+  const hab = (hit?.id ?? 0) % 2 ? "a" : "b";
+  const impact = DRUM.dropDur * DRUM.impactAt;
+  const size = `${DRUM.circle * scale * 100}%`; // корпус с учётом scale картинки
+
+  useIsoLayoutEffect(() => {
+    setPhase(reduceMotion ? "static" : "pre");
+  }, [reduceMotion]);
+
+  // блок с ref рисуется только после первого перехода из static в pre, поэтому следим и за animated:
+  // иначе наблюдатель подпишется на пустой ref и барабан навсегда останется прозрачным
+  const animated = phase !== "static";
+
+  // падение при появлении в экране: и в первый раз, и после того как ушла из блока и вернулась
+  useEffect(() => {
+    if (reduceMotion || !animated) return;
+    const root = rootRef.current;
+    if (!root) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        setVisible(e.isIntersecting);
+        if (e.isIntersecting) {
+          if (!armed.current) return;
+          armed.current = false;
+          setPhase("run");
+          setPlayId((n) => n + 1);
+        } else {
+          armed.current = true;
+        }
+      },
+      { threshold: 0.3, rootMargin: "0px 0px -10% 0px" },
+    );
+    io.observe(root);
+    return () => io.disconnect();
+  }, [reduceMotion, animated]);
+
+  const bigBurst = useMemo(() => (playId ? drumBurst(DRUM.bigSparks, [160, 380], DRUM.circle * scale) : []), [playId, scale]);
+  const hitBurst = useMemo(() => (hit ? drumBurst(DRUM.hitSparks, [70, 190], DRUM.circle * scale) : []), [hit, scale]);
+
+  const onHit = (ev: ReactMouseEvent<HTMLButtonElement>) => {
+    const r = ev.currentTarget.getBoundingClientRect();
+    const kb = ev.detail === 0; // с клавиатуры координат нет: бьём в центр
+    const c = (v: number) => Math.max(-1, Math.min(1, v));
+    const dx = kb ? 0 : c((ev.clientX - (r.left + r.width / 2)) / (r.width / 2));
+    const dy = kb ? 0 : c((ev.clientY - (r.top + r.height / 2)) / (r.height / 2));
+    // вдавливается от точки касания: уходит в противоположную сторону и чуть кренится
+    setHit((h) => ({ id: (h?.id ?? 0) + 1, hx: -dx * 10, hy: -dy * 10, hr: dx * 3 }));
+  };
+
+  if (phase === "static") {
+    return (
+      <img
+        src={src}
+        alt={alt}
+        className="w-full h-auto object-contain drop-shadow-[0_20px_30px_rgba(0,0,0,0.4)]"
+        style={{ transform: `rotate(${rotate}deg) scale(${scale})` }}
+      />
+    );
+  }
+
+  const run = phase === "run";
+  const play = visible ? "running" : "paused";
+  const circle: CSSProperties = { width: size, aspectRatio: "1", borderRadius: "50%" };
+
+  return (
+    <div ref={rootRef} className="relative">
+      <style>{DRUM_KEYFRAMES}</style>
+
+      {/* 1. падение */}
+      <div
+        style={{
+          opacity: run ? undefined : 0,
+          willChange: "transform, opacity",
+          animation: run
+            ? `rl-drum-drop-${ab} ${DRUM.dropDur}s both, rl-drum-fade-${ab} 0.14s ease-out both`
+            : undefined,
+        }}
+      >
+        {/* 2. удар по клику */}
+        <div
+          style={
+            {
+              "--hx": `${hit?.hx ?? 0}px`,
+              "--hy": `${hit?.hy ?? 0}px`,
+              "--hr": `${hit?.hr ?? 0}deg`,
+              animation: hit ? `rl-drum-hit-${hab} 0.36s ease-out both` : undefined,
+            } as CSSProperties
+          }
+        >
+          {/* 3. пульс в ритм 4/4: стартует, когда барабан уже успокоился */}
+          <div
+            style={{
+              animation: run ? `rl-drum-idle-${ab} ${DRUM.beat}s ease-in-out ${DRUM.dropDur + 0.1}s infinite` : undefined,
+              animationPlayState: play,
+            }}
+          >
+            <img
+              src={src}
+              alt={alt}
+              className="w-full h-auto object-contain drop-shadow-[0_20px_30px_rgba(0,0,0,0.4)]"
+              style={{ transform: `rotate(${rotate}deg) scale(${scale})` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Удар о шов: вспышка, три волны, осколки. Живут вне барабана, чтобы не прыгать вместе с ним */}
+      {run && playId > 0 && (
+        <div key={playId} aria-hidden="true" className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+          <div
+            className="absolute"
+            style={{
+              ...circle,
+              background: "radial-gradient(circle, rgba(255,255,255,0.9), rgba(255,255,255,0) 65%)",
+              animation: `rl-drum-flash 0.5s ease-out ${impact}s both`,
+            }}
+          />
+          {(
+            [
+              { border: `3px solid ${DRUM.light}`, s: 1.55, dur: 0.8, delay: 0 },
+              { border: `2px solid ${DRUM.dark}`, s: 1.85, dur: 1.0, delay: 0.1 },
+              { border: `1px solid ${DRUM.light}`, s: 2.2, dur: 1.2, delay: 0.2 },
+            ] as const
+          ).map((r, i) => (
+            <div
+              key={i}
+              className="absolute"
+              style={
+                {
+                  ...circle,
+                  border: r.border,
+                  "--s": r.s,
+                  animation: `rl-drum-ring ${r.dur}s ease-out ${(impact + r.delay).toFixed(2)}s both`,
+                } as CSSProperties
+              }
+            />
+          ))}
+          {bigBurst.map((s, i) => (
+            <span
+              key={i}
+              className="absolute rounded-full"
+              style={
+                {
+                  left: `${s.x}%`,
+                  top: `${s.y}%`,
+                  width: s.size,
+                  height: s.size,
+                  background: s.light ? DRUM.light : DRUM.dark,
+                  "--dx": `${s.dx.toFixed(1)}px`,
+                  "--dy": `${s.dy.toFixed(1)}px`,
+                  animation: `rl-drum-spark ${s.dur.toFixed(2)}s cubic-bezier(0.1, 0.7, 0.3, 1) ${(impact + s.delay).toFixed(2)}s both`,
+                } as CSSProperties
+              }
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Раз в такт: тонкое кольцо, пока барабан в экране */}
+      {run && (
+        <div aria-hidden="true" className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+          <div
+            style={{
+              ...circle,
+              border: `2px solid ${DRUM.light}`,
+              animation: `rl-drum-pulse-${ab} ${DRUM.beat}s ease-out ${DRUM.dropDur + 0.1}s infinite`,
+              animationPlayState: play,
+            }}
+          />
+        </div>
+      )}
+
+      {/* Реакция на клик: кольцо и осколки (перезапускаются на каждый удар) */}
+      {hit && (
+        <div key={hit.id} aria-hidden="true" className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+          <div
+            className="absolute"
+            style={
+              {
+                ...circle,
+                border: `3px solid ${DRUM.light}`,
+                "--s": 1.3,
+                animation: "rl-drum-ring 0.5s ease-out both",
+              } as CSSProperties
+            }
+          />
+          {hitBurst.map((s, i) => (
+            <span
+              key={i}
+              className="absolute rounded-full"
+              style={
+                {
+                  left: `${s.x}%`,
+                  top: `${s.y}%`,
+                  width: s.size * 0.75,
+                  height: s.size * 0.75,
+                  background: s.light ? DRUM.light : DRUM.dark,
+                  "--dx": `${s.dx.toFixed(1)}px`,
+                  "--dy": `${s.dy.toFixed(1)}px`,
+                  animation: `rl-drum-spark ${s.dur.toFixed(2)}s cubic-bezier(0.1, 0.7, 0.3, 1) ${s.delay.toFixed(2)}s both`,
+                } as CSSProperties
+              }
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Невидимая кнопка ровно по корпусу: родитель с pointer-events-none, поэтому клик ловит только круг */}
+      {run && (
+        <button
+          type="button"
+          onClick={onHit}
+          aria-label="Ударить в барабан"
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-auto cursor-pointer bg-transparent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white [-webkit-tap-highlight-color:transparent]"
+          style={circle}
+        />
+      )}
     </div>
   );
 }
@@ -1971,15 +2665,16 @@ export default function Landing() {
 
       {/* ─── Преподаватель ─── */}
       <section id="team" className="max-w-6xl mx-auto px-6 py-24">
-        <Reveal key={mode}>
-          <div className="grid lg:grid-cols-[380px_1fr] gap-12 lg:gap-16 items-center">
-            <TeacherPass
-              photo={m.teacher.photo}
-              role={m.teacher.role}
-              tone={m.tone}
-              color
-              fields={m.teacher.fields}
-            />
+        <div className="grid lg:grid-cols-[380px_1fr] gap-12 lg:gap-16 items-center">
+          {/* у пропуска свой выход (вылетает с ударом), поэтому он вне Reveal. БЕЗ key: карточка одна, выход проигрывается заново сам */}
+          <TeacherPass
+            photo={m.teacher.photo}
+            role={m.teacher.role}
+            tone={m.tone}
+            color
+            fields={m.teacher.fields}
+          />
+          <Reveal key={mode} delay={250}>
             <div>
               <Kicker tone={m.tone}>{m.teacher.kicker}</Kicker>
               <p className="rl-display text-3xl md:text-4xl leading-tight mb-6">{m.teacher.quote}</p>
@@ -1988,8 +2683,8 @@ export default function Landing() {
                 Записаться к преподавателю
               </CTA>
             </div>
-          </div>
-        </Reveal>
+          </Reveal>
+        </div>
       </section>
 
       {/* ─── Прайс ─── */}
@@ -2023,7 +2718,7 @@ export default function Landing() {
         ) : (
         <div className="max-w-3xl mx-auto relative z-10 flex flex-col items-center">
           <div
-            className="pointer-events-none z-10 drop-shadow-[0_20px_30px_rgba(0,0,0,0.4)]"
+            className="pointer-events-none z-10"
             style={{
               width: isDesktop ? art.widthSm : art.width,
               maxWidth: art.maxWidth,
@@ -2032,12 +2727,7 @@ export default function Landing() {
               transform: `translateX(${isDesktop ? art.shiftXSm : art.shiftX}px)`,
             }}
           >
-            <img
-              src={art.src}
-              alt={art.alt}
-              className="w-full h-auto object-contain"
-              style={{ transform: `rotate(${art.rotate}deg) scale(${art.scale})` }}
-            />
+            <PricingDrum src={art.src} alt={art.alt} rotate={art.rotate} scale={art.scale} />
           </div>
         </div>
         )}
