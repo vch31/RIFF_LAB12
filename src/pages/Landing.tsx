@@ -453,7 +453,21 @@ const passShake = (n: string, px: number) => `
   100% { transform: translate3d(0, 0, 0); }
 }`;
 
+// текст преподавателя: слова вылетают из глубины, «врезаются» с цветной вспышкой и остывают до обычного цвета
+const PASS_WORD_KEYFRAMES = `
+@keyframes rl-pass-word {
+  0% { opacity: 0; filter: blur(14px); color: var(--wc); transform: perspective(700px) translate3d(0, 0.7em, -260px) rotateX(-80deg) scale(1.7); }
+  55% { opacity: 1; filter: blur(0); color: var(--wc); text-shadow: 0 0 28px var(--wc); transform: perspective(700px) translate3d(0, -0.06em, 0) rotateX(8deg) scale(0.94); }
+  78% { text-shadow: 0 0 12px var(--wc); transform: perspective(700px) translate3d(0, 0.02em, 0) rotateX(-2deg) scale(1.02); }
+  100% { opacity: 1; filter: blur(0); text-shadow: 0 0 0 transparent; transform: perspective(700px) translate3d(0, 0, 0) rotateX(0deg) scale(1); }
+}
+@keyframes rl-pass-soft {
+  from { opacity: 0; filter: blur(6px); transform: translate3d(0, 16px, 0); }
+  to { opacity: 1; filter: blur(0); transform: translate3d(0, 0, 0); }
+}`;
+
 const PASS_KEYFRAMES = `
+${PASS_WORD_KEYFRAMES}
 ${passFly("rl-pass-fly-a")}
 ${passFly("rl-pass-fly-b")}
 ${passShake("rl-pass-shake-a", PASS.shake)}
@@ -489,19 +503,47 @@ ${passShake("rl-pass-shake-b", PASS.shake)}
 
 type PassData = { photo: string; role: string; fields: [string, string][]; tone: Tone };
 
+/** Цитата по словам. Перезапускается сменой key у родителя. Старт сразу после удара пропуска */
+function ImpactWords({ text, start }: { text: string; start: number }) {
+  return (
+    <>
+      {text.split(" ").map((w, i) => (
+        <span key={i}>
+          <span
+            className="inline-block"
+            style={{ animation: `rl-pass-word 0.7s cubic-bezier(0.2, 0.9, 0.25, 1) ${(start + i * 0.06).toFixed(2)}s both` }}
+          >
+            {w}
+          </span>{" "}
+        </span>
+      ))}
+    </>
+  );
+}
+
 function TeacherPass({
   photo,
   role,
   tone,
   fields,
   color = false,
+  onPlay,
+  onLeaving,
 }: {
   photo: string;
   role: string;
   tone: Tone;
   fields: [string, string][];
   color?: boolean;
+  /** пропуск начал новый выход (заезд в экран или смена студии) */
+  onPlay?: () => void;
+  /** старый пропуск улетает (true) или смену отменили (false) */
+  onLeaving?: (leaving: boolean) => void;
 }) {
+  const onPlayRef = useRef(onPlay);
+  onPlayRef.current = onPlay;
+  const onLeavingRef = useRef(onLeaving);
+  onLeavingRef.current = onLeaving;
   const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   const rootRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -523,6 +565,7 @@ function TeacherPass({
   // запустить выход заново (опционально сразу с новым содержимым)
   const play = useCallback((next?: PassData) => {
     if (next) setShown(next);
+    onPlayRef.current?.();
     setLeaving(false);
     setRevealed(false);
     setPlayId((n) => n + 1);
@@ -560,6 +603,7 @@ function TeacherPass({
   useEffect(() => {
     if (photo === shown.photo && role === shown.role) {
       setLeaving(false); // быстро переключили туда-обратно: просто остаёмся
+      onLeavingRef.current?.(false);
       return;
     }
     const next: PassData = { photo, role, fields, tone };
@@ -568,6 +612,7 @@ function TeacherPass({
       return;
     }
     setLeaving(true);
+    onLeavingRef.current?.(true);
     const id = window.setTimeout(() => play(next), PASS.swapOut);
     return () => window.clearTimeout(id);
   }, [photo, role, fields, tone, shown.photo, shown.role, phase, reduceMotion, play]);
@@ -1437,7 +1482,8 @@ function ReasonCard({ index, text, tone }: { index: number; text: string; tone: 
  *  - мобила и планшет (<1024px): GuitarStageImage. Гитара висит за текстом справа
  *  - десктоп (≥1024px): GuitarDesktopScene. Сцена закреплена, слева текст, справа колонка гитары
  *
- * Сценарий, всё привязано к скроллу (без таймеров):
+ * Сценарий. На мобиле и планшете всё привязано к скроллу. На десктопе (cfg.levitate) скролла нет:
+ * гитара сразу стоит на месте в финальном кадре и плавно парит (ниже описан путь для мобилы):
  *  1. Сначала гитара у правого края экрана, наполовину за ним: расфокус, приглушена,
  *     чуть ближе к камере (крупнее), наклонена к центру. За ней тёплая подсветка от края.
  *  2. Потом выходит на сцену: уезжает к своему месту, наводится фокус, по глянцу
@@ -1468,6 +1514,7 @@ const GUITAR_STAGE = {
   extra: 1, // сколько ещё «высот сцены» гитара остаётся прилипшей, чтобы путь был длиннее (0 = рывком)
   settle: 1.4, // длина перелёта в высотах сцены (больше = дольше и плавнее)
   tMax: 1.6, // докуда идёт доворот после посадки (1 = сразу стоп)
+  levitate: null as { amp: number; dur: number } | null, // не null = БЕЗ скролла: гитара уже стоит на месте и левитирует (amp px вверх-вниз за dur сек)
   smooth: 0.1, // сек, инерция: больше = плавнее и «тяжелее», меньше = отзывчивее (0.05–0.2)
   // ── начало: у правого края
   pinEdge: 0.94, // где центр гитары в начале, как доля ширины экрана. 1 = ровно на краю (видна половина)
@@ -1506,7 +1553,8 @@ const GUITAR_STAGE_DESKTOP: StageCfg = {
   ...GUITAR_STAGE,
   slot: "min(76svh, 680px)",
   top: "calc(64px + (100svh - 64px - min(76svh, 680px)) / 2)",
-  extra: 1.5, // чуть дольше закреплена: на десктопе колесо мыши шагает крупнее
+  levitate: { amp: 14, dur: 4.5 }, // десктоп: гитара уже на месте и плавно парит, без вылета и скролла. extra и settle ниже тогда не используются
+  extra: 1.5, // (только если levitate: null) чуть дольше закреплена: на десктопе колесо мыши шагает крупнее
   settle: 1.15, // путь ≈ 1.15 высоты сцены; перед ним небольшая пауза, чтобы успеть увидеть начальный кадр
   smooth: 0.12,
   pinEdge: 0.985, // у самого края: видна примерно половина
@@ -1536,6 +1584,8 @@ const EMBERS = [
 const STAGE_KEYFRAMES = `
 @keyframes rl-sway { from { transform: rotate(-0.5deg); } to { transform: rotate(0.6deg); } }
 @keyframes rl-breathe { from { opacity: 0.75; } to { opacity: 1; } }
+@keyframes rl-float { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(0, calc(var(--amp) * -1px), 0); } }
+@keyframes rl-float-pool { from { transform: scale(1); opacity: 1; } to { transform: scale(0.82, 0.8); opacity: 0.55; } }
 @keyframes rl-ember {
   0% { transform: translate(0, 0) scale(1); opacity: 0; }
   12% { opacity: 0.9; }
@@ -1575,8 +1625,8 @@ function useGuitarStageProgress(
     const stage = stageRef.current;
     const slot = slotRef.current;
     if (!root || !stage || !slot) return;
-    if (reduceMotion) {
-      // без анимации: сразу готовый кадр
+    if (reduceMotion || cfg.levitate) {
+      // без привязки к скроллу (reduced-motion или режим левитации): сразу готовый кадр, дальше только CSS-анимации
       for (const k of ["--s", "--f", "--p"]) root.style.setProperty(k, "1");
       root.style.setProperty("--r", String(cfg.to));
       return;
@@ -1777,14 +1827,31 @@ function GuitarStageView({ cfg, alive }: { cfg: StageCfg; alive: boolean }) {
             height: "9%",
             opacity: P,
             filter: "blur(10px)",
-            background: `radial-gradient(ellipse at center, rgba(${cfg.glowRgb},${cfg.pool}), transparent 70%)`,
           }}
-        />
+        >
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(ellipse at center, rgba(${cfg.glowRgb},${cfg.pool}), transparent 70%)`,
+              animation:
+                alive && cfg.levitate ? `rl-float-pool ${cfg.levitate.dur}s ease-in-out infinite alternate` : undefined,
+            }}
+          />
+        </div>
       )}
 
       {/* Сама гитара. Пивот у основания: она опирается на пол и клонится, а не крутится вокруг центра.
           Только 2D-трансформации (без perspective/rotateY): они стабильно идут на GPU */}
-      <div className="absolute inset-0 flex items-center justify-center">
+      <div
+        className="absolute inset-0 flex items-center justify-center will-change-transform"
+        style={
+          {
+            "--amp": cfg.levitate?.amp ?? 0,
+            animation:
+              alive && cfg.levitate ? `rl-float ${cfg.levitate.dur}s ease-in-out infinite alternate` : undefined,
+          } as CSSProperties
+        }
+      >
         <div
           className="relative will-change-transform"
           style={{
@@ -1916,15 +1983,15 @@ function GuitarDesktopScene({ children }: { children: ReactNode }) {
       style={{
         width: "100vw",
         marginLeft: "calc(50% - 50vw)",
-        // высота = сцена + запас скролла, пока она закреплена (при reduced-motion без запаса)
-        height: reduceMotion ? undefined : `calc(${g.slot} * ${1 + g.extra})`,
+        // высота = сцена + запас скролла, пока она закреплена (при reduced-motion и в авто-режиме без запаса)
+        height: reduceMotion || g.levitate ? undefined : `calc(${g.slot} * ${1 + g.extra})`,
       }}
     >
       {alive && <style>{STAGE_KEYFRAMES}</style>}
       <div
         ref={stageRef}
         style={
-          reduceMotion
+          reduceMotion || g.levitate
             ? { position: "relative", height: g.slot }
             : { position: "sticky", top: g.top, height: g.slot }
         }
@@ -2399,9 +2466,77 @@ const SOCIAL_LINKS: Array<{ icon: SocialName; label: string; href: string; tone:
  * СТРАНИЦА
  * ───────────────────────────────────────────────────────────── */
 
+/**
+ * Заголовок прайса «эквалайзер»: каждая буква — столбик уровня. Цвет студии поднимается снизу вверх, прыгает
+ * (высоты пиков идут синусоидой по слову, как сигнал на осциллографе), добивает до 100% и стекает обратно в чёрный.
+ * Уровень задаёт зарегистрированная переменная --lvl (@property), поэтому анимируется плавно. Перезапуск: key у родителя.
+ */
+const EQ = { dur: 1.8, step: 0.06, base: "#1A1A1A" };
+
+function EqTitle({ words }: { words: string[] }) {
+  let gi = 0; // сквозной номер буквы по всем словам: волна не обрывается между строками
+  return (
+    <>
+      <style>{`
+@property --lvl { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+@keyframes rl-eq {
+  0% { --lvl: 0%; }
+  18% { --lvl: 100%; }
+  34% { --lvl: var(--h); }
+  50% { --lvl: 100%; }
+  64% { --lvl: var(--h); }
+  78% { --lvl: 100%; }
+  100% { --lvl: 0%; }
+}`}</style>
+      {words.map((w, wi) => (
+        <span key={wi}>
+          <span className="sr-only">{w}</span>
+          <span aria-hidden="true">
+            {Array.from(w).map((ch, i) => {
+              const n = gi++;
+              const h = Math.round(55 + 40 * Math.sin(n * 0.85 + 1));
+              const cap = "color-mix(in srgb, white 70%, var(--c))"; // яркая «макушка» столбика
+              return (
+                <span
+                  key={i}
+                  style={
+                    {
+                      display: "inline-block",
+                      padding: "0.12em 0",
+                      margin: "-0.12em 0",
+                      "--h": `${h}%`,
+                      backgroundImage: `linear-gradient(to top, var(--c) 0, var(--c) calc(var(--lvl) - 4%), ${cap} calc(var(--lvl) - 4%), ${cap} var(--lvl), ${EQ.base} var(--lvl))`,
+                      WebkitBackgroundClip: "text",
+                      backgroundClip: "text",
+                      color: "transparent",
+                      WebkitTextFillColor: "transparent",
+                      animation: `rl-eq ${EQ.dur}s cubic-bezier(0.3, 0.7, 0.3, 1) ${(n * EQ.step).toFixed(2)}s both`,
+                    } as CSSProperties
+                  }
+                >
+                  {ch}
+                </span>
+              );
+            })}
+          </span>
+          {wi < words.length - 1 && <br />}
+        </span>
+      ))}
+    </>
+  );
+}
+
 export default function Landing() {
   const [mode, setMode] = useState<Mode>("guitar");
   const [showCta, setShowCta] = useState(false);
+  // текст преподавателя: показывает то, что видит пропуск, и перезапускается вместе с ним
+  const [textMode, setTextMode] = useState<Mode>("guitar");
+  const [textPlay, setTextPlay] = useState(0);
+  const [textIn, setTextIn] = useState(true); // блок текста в экране
+  const [textLeaving, setTextLeaving] = useState(false);
+  const textRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const [eqPlay, setEqPlay] = useState(0); // +1 при каждом заезде заголовка прайса в экран
 
   const m = MODES[mode];
   const t = TONE[m.tone];
@@ -2409,6 +2544,42 @@ export default function Landing() {
   const igUrl = "https://www.instagram.com/" + m.igHandle;
 
   const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+  const tm = MODES[reduceMotion ? mode : textMode]; // что сейчас показано в тексте преподавателя
+  const quoteWords = tm.teacher.quote.split(" ").length;
+
+  // текст прячем до заезда в экран; наблюдатель не отключается, поэтому слова вылетают при каждом возвращении
+  useIsoLayoutEffect(() => {
+    if (!reduceMotion) setTextIn(false);
+  }, [reduceMotion]);
+  useEffect(() => {
+    if (reduceMotion) return;
+    const el = textRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        setTextIn(e.isIntersecting);
+        if (e.isIntersecting) setTextPlay((n) => n + 1);
+      },
+      { threshold: 0, rootMargin: "0px 0px -80px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [reduceMotion]);
+
+  // заголовок прайса: эквалайзер играет при каждом возвращении в экран
+  useEffect(() => {
+    if (reduceMotion) return;
+    const el = titleRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) setEqPlay((n) => n + 1);
+      },
+      { threshold: 0.3 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [reduceMotion]);
   const isDesktop = useMediaQuery("(min-width: 640px)");
   const isLg = useMediaQuery("(min-width: 1024px)");
   const guitarStage = !isLg && mode === "guitar"; // мобила и планшет: гитара за текстом, потом под ним
@@ -2673,17 +2844,43 @@ export default function Landing() {
             tone={m.tone}
             color
             fields={m.teacher.fields}
+            onPlay={() => {
+              setTextMode(mode);
+              setTextLeaving(false);
+              setTextPlay((n) => n + 1);
+            }}
+            onLeaving={setTextLeaving}
           />
-          <Reveal key={mode} delay={250}>
-            <div>
-              <Kicker tone={m.tone}>{m.teacher.kicker}</Kicker>
-              <p className="rl-display text-3xl md:text-4xl leading-tight mb-6">{m.teacher.quote}</p>
-
-              <CTA href={m.teacher.ctaHref} ext tone={m.tone}>
-                Записаться к преподавателю
-              </CTA>
+          {/* текст: свой наблюдатель (на мобиле он ниже карточки), при каждом заезде слова вылетают заново */}
+          <div
+            ref={textRef}
+            style={{
+              "--wc": TONE[tm.tone].cssVar,
+              opacity: !reduceMotion && (!textIn || textLeaving) ? 0 : 1,
+              transform: textLeaving ? "translate3d(0, 12px, 0)" : "none",
+              transition: textLeaving ? "opacity 0.2s ease-in, transform 0.2s ease-in" : "none",
+            } as CSSProperties}
+          >
+            <div key={reduceMotion ? "static" : `${textMode}-${textPlay}`}>
+              <div style={reduceMotion ? undefined : { animation: `rl-pass-soft 0.6s ${PASS.impact}s ease-out both` }}>
+                <Kicker tone={tm.tone}>{tm.teacher.kicker}</Kicker>
+              </div>
+              <p className="rl-display text-3xl md:text-4xl leading-tight mb-6">
+                {reduceMotion ? tm.teacher.quote : <ImpactWords text={tm.teacher.quote} start={PASS.impact + 0.1} />}
+              </p>
+              <div
+                style={
+                  reduceMotion
+                    ? undefined
+                    : { animation: `rl-pass-soft 0.6s ${(PASS.impact + 0.3 + quoteWords * 0.06).toFixed(2)}s ease-out both` }
+                }
+              >
+                <CTA href={tm.teacher.ctaHref} ext tone={tm.tone}>
+                  Записаться к преподавателю
+                </CTA>
+              </div>
             </div>
-          </Reveal>
+          </div>
         </div>
       </section>
 
@@ -2735,10 +2932,20 @@ export default function Landing() {
         <Reveal className="max-w-3xl mx-auto relative z-10 flex flex-col items-center">
           {/* Заголовок */}
           <div className="text-center mb-10 relative z-0">
-            <h2 className="rl-display text-[3.5rem] sm:text-[6rem] leading-[0.85] text-[#1A1A1A] font-black uppercase tracking-tighter">
-              {m.pricing.word}
-              <br />
-              Lessons
+            <h2
+              ref={titleRef}
+              className="rl-display text-[3.5rem] sm:text-[6rem] leading-[0.85] text-[#1A1A1A] font-black uppercase tracking-tighter"
+              style={{ "--c": t.cssVar } as CSSProperties}
+            >
+              {reduceMotion ? (
+                <>
+                  {m.pricing.word}
+                  <br />
+                  Lessons
+                </>
+              ) : (
+                <EqTitle key={`${m.pricing.word}-${eqPlay}`} words={[m.pricing.word, "Lessons"]} />
+              )}
             </h2>
 
             <p className="text-[#1A1A1A] text-xs sm:text-sm font-bold uppercase tracking-widest mt-6 mb-2">
