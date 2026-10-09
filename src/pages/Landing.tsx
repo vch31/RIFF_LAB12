@@ -2496,47 +2496,39 @@ const SOCIAL_LINKS: Array<{ icon: SocialName; label: string; href: string; tone:
  * ───────────────────────────────────────────────────────────── */
 
 /**
- * Заголовок прайса «Guitar Lessons» / «Drum Lessons»: буквы стоят спокойно, по ним пробегает молния.
+ * Заголовок прайса «Guitar Lessons» / «Drum Lessons»: по кромке букв пробегает электрический разряд.
  *
- * Поверх текста лежит его копия (aria-hidden), прозрачная, с фоном-молнией, обрезанным по форме букв
- * (background-clip: text). Молния видна ТОЛЬКО на буквах: они на миг вспыхивают светлым, на фоне секции
- * ничего не рисуется. Пробежка идёт слева направо с коротким мерцанием, как настоящий разряд, потом пауза.
- * Первый раз сразу после появления заголовка в экране (перезапуск: key у родителя), дальше
- * раз в BOLT.period секунд, очень сдержанно.
+ * Буквы стоят спокойно. Поверх лежит их прозрачная копия (aria-hidden) только с тонкой светлой обводкой
+ * (text-stroke идёт ровно по контуру). Обводка видна лишь внутри узкой полосы, которая едет слева направо
+ * (mask), поэтому разряд «бежит» по краям букв, а сами буквы не заливаются. SVG-фильтр рвёт линию
+ * шумом: край становится зубчатым, как у настоящего разряда, и трещит, потому что seed шума меняется
+ * шагами. Плюс короткое мерцание и тёплое свечение вокруг.
+ * Первый раз сразу после появления заголовка в экране (перезапуск: key у родителя), дальше раз в BOLT.period сек.
  *
- * Анимируется только background-position и opacity.
+ * Анимируются только mask-position и opacity. Пока разряд не идёт, копия невидима (opacity 0), фильтр не считается.
  */
 const BOLT = {
   period: 6, // сек: пробежка + пауза до следующей
   delay: 0.35, // сек до первой пробежки после появления в экране
+  stroke: "max(2px, 0.025em)", // толщина светлой кромки
+  jag: 7, // зубчатость кромки (0 = ровная линия)
+  band: 0.45, // ширина светящейся полосы, доля ширины заголовка
 };
-
-// Молния + светлый шлейф за ней. viewBox 160×100: высота = высота заголовка, ширина считается сама
-const BOLT_SVG = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 100'>
-<defs>
-<linearGradient id='t' x1='0' x2='1' y1='0' y2='0'><stop offset='0' stop-color='#fff' stop-opacity='0'/><stop offset='1' stop-color='#fff' stop-opacity='0.4'/></linearGradient>
-<filter id='b' x='-50%' y='-20%' width='200%' height='140%'><feGaussianBlur stdDeviation='3'/></filter>
-</defs>
-<polygon points='0,0 128,0 92,100 0,100' fill='url(#t)'/>
-<polyline points='128,0 112,30 124,36 100,66 112,72 92,100' fill='none' stroke='#FFF6B8' stroke-width='9' stroke-linejoin='round' filter='url(#b)'/>
-<polyline points='112,30 98,40 104,48' fill='none' stroke='#FFF6B8' stroke-width='5' stroke-linejoin='round' filter='url(#b)'/>
-<polyline points='128,0 112,30 124,36 100,66 112,72 92,100' fill='none' stroke='#fff' stroke-width='2.6' stroke-linejoin='miter'/>
-<polyline points='112,30 98,40 104,48' fill='none' stroke='#fff' stroke-width='1.6' stroke-linejoin='miter'/>
-</svg>`;
-const BOLT_URL = `url("data:image/svg+xml,${encodeURIComponent(BOLT_SVG)}")`;
 
 const BOLT_KEYFRAMES = `
 @keyframes rl-bolt {
-  0% { background-position-x: -200%; opacity: 0; }
+  0% { -webkit-mask-position-x: -100%; mask-position-x: -100%; opacity: 0; }
   1% { opacity: 1; }
-  4% { opacity: 0.55; }
-  6% { opacity: 1; }
-  10% { opacity: 0.7; }
-  12% { opacity: 1; }
-  16% { background-position-x: 300%; opacity: 1; }
-  17% { opacity: 0; }
-  100% { background-position-x: 300%; opacity: 0; }
+  4% { opacity: 0.6; }
+  7% { opacity: 1; }
+  11% { opacity: 0.7; }
+  14% { opacity: 1; }
+  18% { -webkit-mask-position-x: 200%; mask-position-x: 200%; opacity: 1; }
+  19% { opacity: 0; }
+  100% { -webkit-mask-position-x: 200%; mask-position-x: 200%; opacity: 0; }
 }`;
+
+const BOLT_MASK = "linear-gradient(105deg, transparent 0%, #000 55%, transparent 100%)"; // мягкая полоса с острым фронтом
 
 function BoltTitle({ words }: { words: string[] }) {
   const lines = words.map((w, i) => (
@@ -2546,27 +2538,44 @@ function BoltTitle({ words }: { words: string[] }) {
     </span>
   ));
   return (
-    // w-fit: обёртка ровно по ширине текста, поэтому молния бежит по буквам, а не по пустым полям
+    // w-fit: обёртка ровно по ширине текста, поэтому разряд бежит по буквам, а не по пустым полям
     <span className="relative block w-fit mx-auto">
       <style>{BOLT_KEYFRAMES}</style>
+      {/* фильтр «зубчатая кромка»: шум смещает пиксели линии, seed меняется шагами, отсюда треск */}
+      <svg width="0" height="0" aria-hidden="true" style={{ position: "absolute" }}>
+        <filter id="rl-bolt-jag" x="-5%" y="-10%" width="110%" height="120%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="3" result="n">
+            <animate attributeName="seed" values="1;5;2;8;4;7;3;6" dur="0.56s" repeatCount="indefinite" calcMode="discrete" />
+          </feTurbulence>
+          <feDisplacementMap in="SourceGraphic" in2="n" scale={BOLT.jag} xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </svg>
       {lines}
+      {/* Маска на внешнем слое, фильтр на внутреннем: маска режет уже готовое свечение, и полоса получается мягкой */}
       <span
         aria-hidden="true"
         className="absolute inset-0 pointer-events-none select-none"
         style={{
-          color: "transparent",
-          WebkitTextFillColor: "transparent",
-          backgroundImage: BOLT_URL,
-          backgroundRepeat: "no-repeat",
-          backgroundSize: "auto 100%",
-          backgroundPositionY: "0",
-          WebkitBackgroundClip: "text",
-          backgroundClip: "text",
-          filter: "drop-shadow(0 0 8px rgba(255, 246, 184, 0.75))",
+          WebkitMaskImage: BOLT_MASK,
+          maskImage: BOLT_MASK,
+          WebkitMaskRepeat: "no-repeat",
+          maskRepeat: "no-repeat",
+          WebkitMaskSize: `${BOLT.band * 100}% 100%`,
+          maskSize: `${BOLT.band * 100}% 100%`,
           animation: `rl-bolt ${BOLT.period}s linear ${BOLT.delay}s infinite both`,
         }}
       >
-        {lines}
+        <span
+          className="block"
+          style={{
+            color: "transparent",
+            WebkitTextFillColor: "transparent",
+            WebkitTextStroke: `${BOLT.stroke} #fff`,
+            filter: "url(#rl-bolt-jag) drop-shadow(0 0 3px rgba(255, 246, 184, 0.85))",
+          }}
+        >
+          {lines}
+        </span>
       </span>
     </span>
   );
@@ -2612,7 +2621,7 @@ export default function Landing() {
     return () => io.disconnect();
   }, [reduceMotion]);
 
-  // заголовок прайса: молния бежит по буквам при каждом возвращении в экран
+  // заголовок прайса: разряд бежит по кромке букв при каждом возвращении в экран
   useEffect(() => {
     if (reduceMotion) return;
     const el = titleRef.current;
