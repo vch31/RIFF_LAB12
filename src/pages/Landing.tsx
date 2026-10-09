@@ -1515,7 +1515,7 @@ const GUITAR_STAGE = {
   extra: 1, // сколько ещё «высот сцены» гитара остаётся прилипшей, чтобы путь был длиннее (0 = рывком)
   settle: 1.4, // длина перелёта в высотах сцены (больше = дольше и плавнее)
   tMax: 1.6, // докуда идёт доворот после посадки (1 = сразу стоп)
-  levitate: null as { amp: number; dur: number } | null, // не null = БЕЗ скролла: гитара уже стоит на месте и левитирует (amp px вверх-вниз за dur сек)
+  levitate: { amp: 10, dur: 4.5 } as { amp: number; dur: number } | null, // не null = БЕЗ скролла: гитара уже стоит на месте под текстом и левитирует (amp px вверх-вниз за dur сек). null = старый режим: закреплена за текстом и по скроллу выходит на сцену (extra, settle, pin* ниже)
   smooth: 0.1, // сек, инерция: больше = плавнее и «тяжелее», меньше = отзывчивее (0.05–0.2)
   // ── начало: у правого края
   pinEdge: 0.94, // где центр гитары в начале, как доля ширины экрана. 1 = ровно на краю (видна половина)
@@ -1568,7 +1568,7 @@ const GUITAR_STAGE_DESKTOP: StageCfg = {
 
 /** Строки сетки секции на мобиле: текст + зона под гитару (с запасом на длинный путь) */
 const stageRows = (reduce: boolean) =>
-  `auto calc(${GUITAR_STAGE.slot} * ${reduce ? 1 : 1 + GUITAR_STAGE.extra})`;
+  `auto calc(${GUITAR_STAGE.slot} * ${reduce || GUITAR_STAGE.levitate ? 1 : 1 + GUITAR_STAGE.extra})`;
 
 // Искры: x, % слева; s, px; d и t, сек (задержка и длительность); dx, px вбок; dy, svh вверх
 const EMBERS = [
@@ -1940,7 +1940,8 @@ function GuitarStageImage() {
     <div
       ref={rootRef}
       className="relative z-0 self-stretch -mx-6 overflow-x-clip pointer-events-none"
-      style={{ gridColumn: 1, gridRow: "1 / span 2" }}
+      // levitate: только строка 2 (под текстом), без закрепления. Иначе обе строки: гитара идёт за текстом
+      style={{ gridColumn: 1, gridRow: g.levitate ? 2 : "1 / span 2" }}
     >
       {alive && <style>{STAGE_KEYFRAMES}</style>}
 
@@ -1949,9 +1950,11 @@ function GuitarStageImage() {
       <div
         ref={stageRef}
         style={
-          reduceMotion
-            ? { position: "absolute", left: 0, right: 0, bottom: 0, height: g.slot }
-            : { position: "sticky", top: g.top, height: g.slot }
+          g.levitate
+            ? { position: "relative", height: g.slot }
+            : reduceMotion
+              ? { position: "absolute", left: 0, right: 0, bottom: 0, height: g.slot }
+              : { position: "sticky", top: g.top, height: g.slot }
         }
       >
         <PinGlow cfg={g} />
