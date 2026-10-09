@@ -2015,6 +2015,66 @@ function GuitarTiltImage() {
   return <GuitarStageImage />;
 }
 
+/** Компактная предметная сцена для узких экранов: инструмент стоит рядом с описанием, а не уезжает на отдельный экран. */
+function GuitarMobileShowcase() {
+  const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+  const alive = !reduceMotion;
+  // Та самая «живая» гитара из большой сцены — теперь и на телефоне.
+  // Не привязываем её к длинному скроллу: она сразу в фокусе и медленно парит на месте.
+  const g: StageCfg = {
+    ...GUITAR_STAGE,
+    box: 0.42,
+    pinScale: 1,
+    pinOpacity: 1,
+    pinBlur: 0,
+    pinGlow: 0,
+    halo: 0.62,
+    pool: 0.68,
+    rim: 0.82,
+    rimSize: 22,
+    beam: 0.24,
+    beamSwing: 0.35,
+    levitate: { amp: 15, dur: 4.8 },
+    gloss: 0,
+  };
+
+  return (
+    <div
+      className="relative -mx-6 mb-7 overflow-hidden border-y border-rl-line"
+      style={{
+        background:
+          "radial-gradient(ellipse at 50% 50%, rgba(255,122,0,0.2), rgba(255,122,0,0.07) 38%, rgba(10,10,10,0) 73%)",
+      }}
+    >
+      {alive && <style>{STAGE_KEYFRAMES}</style>}
+      <div className="relative h-[min(155vw,690px)] min-h-[500px]">
+        <div className="absolute left-6 top-5 z-20 rl-mono text-[9px] tracking-[0.2em] text-rl-muted">
+          RIFF LAB12 / EQUIPMENT 01
+        </div>
+        <div
+          className="absolute inset-0"
+          style={{ "--s": 1, "--f": 1, "--p": 1, "--r": 3, "--shift": "0px" } as CSSProperties}
+        >
+          <GuitarStageView cfg={g} alive={alive} />
+        </div>
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-24"
+          style={{
+            background: "linear-gradient(to bottom, transparent, rgba(10,10,10,0.92))",
+          }}
+        />
+      </div>
+      <div className="relative flex items-center justify-between gap-3 border-t border-rl-line/80 bg-rl-bg/75 px-6 py-3">
+        <span className="rl-mono text-[10px] tracking-[0.16em] text-[color:var(--ink)]">JET JS-400 MBK R</span>
+        <span className="flex items-center gap-2 rl-mono text-[9px] tracking-[0.16em] text-rl-muted whitespace-nowrap">
+          <span className="h-1.5 w-1.5 rounded-full bg-rl-orange" /> BLACK
+        </span>
+      </div>
+    </div>
+  );
+}
+
 /**
  * Гитара в прайсе: «ложится» на оранжевый постер.
  *
@@ -2276,28 +2336,120 @@ function DrumSideImage() {
 
 type GearItem = { label: string; name: string; text: string; image?: { src: string; alt: string } };
 
-/** Цепочка эффектов NUX: по линии сигнала бежит светлая точка (скрыта при reduced-motion). Картинка с чёрным фоном, поэтому рамка как у экрана */
+/** Цепочка эффектов NUX: импульс заряжает каждую педаль своим цветом и оставляет короткую волну. */
 function SignalChain({ src, alt }: { src: string; alt: string }) {
   const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+  // Центры педалей на изображении; задержка синхронизирована с движением импульса слева направо.
+  const pedals = [
+    { x: 12, color: "rgba(205, 255, 0, 0.95)", glow: "rgba(205, 255, 0, 0.26)" }, // gate
+    { x: 22, color: "rgba(244, 255, 0, 0.95)", glow: "rgba(244, 255, 0, 0.24)" }, // comp
+    { x: 33, color: "rgba(255, 126, 26, 0.98)", glow: "rgba(255, 126, 26, 0.28)" }, // efx
+    { x: 44, color: "rgba(255, 48, 48, 0.98)", glow: "rgba(255, 48, 48, 0.25)" }, // amp
+    { x: 55, color: "rgba(230, 248, 255, 0.98)", glow: "rgba(230, 248, 255, 0.28)" }, // eq
+    { x: 66, color: "rgba(48, 123, 255, 0.98)", glow: "rgba(48, 123, 255, 0.27)" }, // mod
+    { x: 77, color: "rgba(85, 241, 234, 0.98)", glow: "rgba(85, 241, 234, 0.3)" }, // dly
+    { x: 88, color: "rgba(206, 95, 255, 0.98)", glow: "rgba(206, 95, 255, 0.28)" }, // rvb
+  ];
+
   return (
     <div className="relative mt-4 overflow-hidden rounded-xl border border-rl-line bg-black">
-      <style>{`@keyframes rl-signal { 0% { left: 2%; opacity: 0; } 8% { opacity: 1; } 92% { opacity: 1; } 100% { left: 98%; opacity: 0; } }`}</style>
+      <style>{`
+        @keyframes rl-signal-core {
+          0% { left: 2%; opacity: 0; transform: translate(-50%, -50%) scale(.55); }
+          5% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+          88% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+          96% { opacity: .9; transform: translate(-50%, -50%) scale(1.25); }
+          100% { left: 98%; opacity: 0; transform: translate(-50%, -50%) scale(.65); }
+        }
+        @keyframes rl-signal-trail {
+          0% { left: 2%; opacity: 0; transform: translate(-100%, -50%) scaleX(.2); }
+          6% { opacity: .8; transform: translate(-100%, -50%) scaleX(1); }
+          88% { opacity: .78; transform: translate(-100%, -50%) scaleX(1); }
+          100% { left: 98%; opacity: 0; transform: translate(-100%, -50%) scaleX(.3); }
+        }
+        @keyframes rl-pedal-charge {
+          0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(.68); box-shadow: 0 0 0 0 var(--pedal-glow); }
+          2% { opacity: .08; }
+          4.5% { opacity: 1; transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 15px 3px var(--pedal-glow), inset 0 0 10px var(--pedal-glow); }
+          7.5% { opacity: .72; transform: translate(-50%, -50%) scale(1.12); }
+          12% { opacity: 0; transform: translate(-50%, -50%) scale(1.42); box-shadow: 0 0 22px 8px transparent; }
+          13% { opacity: 0; }
+        }
+        @keyframes rl-pedal-ripple {
+          0%, 2% { opacity: 0; transform: scale(.62); }
+          4.5% { opacity: .8; }
+          12% { opacity: 0; transform: scale(1.65); }
+          100% { opacity: 0; transform: scale(1.65); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .rl-signal-fx { animation: none !important; display: none !important; }
+        }
+      `}</style>
       <img src={src} alt={alt} loading="lazy" className="block w-full h-auto" />
       {!reduceMotion && (
-        <span
-          aria-hidden="true"
-          className="absolute rounded-full pointer-events-none"
-          style={{
-            top: "45%", // линия сигнала проходит на ~45% высоты картинки
-            width: 7,
-            height: 7,
-            marginTop: -3.5,
-            marginLeft: -3.5,
-            background: "#E8FFFF",
-            boxShadow: "0 0 10px 3px rgba(90, 230, 230, 0.8)",
-            animation: "rl-signal 3.6s linear infinite",
-          }}
-        />
+        <>
+          {/* Орб оставляет за собой светящийся шлейф; хвост и ядро движутся синхронно. */}
+          <span
+            aria-hidden="true"
+            className="rl-signal-fx absolute pointer-events-none"
+            style={{
+              top: "45%",
+              width: 48,
+              height: 11,
+              background: "linear-gradient(90deg, transparent 0%, rgba(90,230,230,0.08) 35%, rgba(90,230,230,0.4) 78%, rgba(232,255,255,0.95) 100%)",
+              filter: "blur(2px)",
+              animation: "rl-signal-trail 6s linear infinite",
+            }}
+          />
+          {/* В момент прохода каждая педаль вспыхивает собственным цветом и выпускает кольцо. */}
+          {pedals.map((pedal) => {
+            const delay = ((pedal.x - 2) / 96) * 6;
+            return (
+              <span
+                key={pedal.x}
+                aria-hidden="true"
+                className="rl-signal-fx absolute pointer-events-none rounded-lg"
+                style={{
+                  top: "45%",
+                  left: `${pedal.x}%`,
+                  width: "7%",
+                  height: "44%",
+                  border: `1px solid ${pedal.color}`,
+                  background: `radial-gradient(ellipse at center, ${pedal.glow} 0%, transparent 72%)`,
+                  transform: "translate(-50%, -50%) scale(.68)",
+                  opacity: 0,
+                  boxShadow: `0 0 0 0 ${pedal.glow}`,
+                  "--pedal-glow": pedal.glow,
+                  animation: "rl-pedal-charge 6s ease-out infinite",
+                  animationDelay: `${delay.toFixed(2)}s`,
+                } as CSSProperties}
+              >
+                <span
+                  className="absolute -inset-[3px] rounded-[10px]"
+                  style={{
+                    border: `1px solid ${pedal.color}`,
+                    opacity: 0,
+                    animation: "rl-pedal-ripple 6s ease-out infinite",
+                    animationDelay: `${delay.toFixed(2)}s`,
+                  }}
+                />
+              </span>
+            );
+          })}
+          <span
+            aria-hidden="true"
+            className="rl-signal-fx absolute rounded-full pointer-events-none"
+            style={{
+              top: "45%",
+              left: "2%",
+              width: 8,
+              height: 8,
+              background: "#E8FFFF",
+              boxShadow: "0 0 6px 2px rgba(232,255,255,0.95), 0 0 16px 6px rgba(90,230,230,0.75), 0 0 28px 10px rgba(90,230,230,0.28)",
+              animation: "rl-signal-core 6s linear infinite",
+            }}
+          />
+        </>
       )}
     </div>
   );
@@ -2637,7 +2789,8 @@ export default function Landing() {
   }, [reduceMotion]);
   const isDesktop = useMediaQuery("(min-width: 640px)");
   const isLg = useMediaQuery("(min-width: 1024px)");
-  const guitarStage = !isLg && mode === "guitar"; // мобила и планшет: гитара за текстом, потом под ним
+  const guitarMobile = !isDesktop && mode === "guitar"; // телефон: компактная сцена и карточки оборудования
+  const guitarStage = isDesktop && !isLg && mode === "guitar"; // планшет: гитара за текстом, потом под ним
   const guitarScene = isLg && mode === "guitar"; // десктоп: закреплённая сцена, слева текст, справа гитара
 
   const NAV: Array<[string, string]> = [
@@ -2650,12 +2803,16 @@ export default function Landing() {
 
   const art = m.pricing.art;
 
-  // Текстовый блок оборудования: один и тот же в сетке (мобила/планшет) и в десктопной сцене
-  const gearText = (
+  const gearIntro = (
     <>
-    <div className={"rl-mono text-xs mb-3 tracking-widest uppercase " + t.text}>Студийный сетап</div>
-    <h2 className="rl-display text-[color:var(--ink)] text-3xl sm:text-4xl mb-10">Всё готово для игры с первой минуты</h2>
+      <div className={"rl-mono text-xs mb-3 tracking-widest uppercase " + t.text}>Студийный сетап</div>
+      <h2 className="rl-display text-[color:var(--ink)] text-[clamp(30px,8.3vw,40px)] leading-[0.98] tracking-tight mb-6 sm:text-4xl sm:mb-10">
+        Всё готово для игры с первой минуты
+      </h2>
+    </>
+  );
 
+  const gearItems = (
     <div className="space-y-8">
       {m.gear.items.map((it, i) => (
         <div key={it.name} className="flex gap-4 sm:gap-6 items-start">
@@ -2671,6 +2828,13 @@ export default function Landing() {
         </div>
       ))}
     </div>
+  );
+
+  // Планшет и десктоп сохраняют сцену со скролл-анимацией; на узких экранах оборудование собрано в компактные карточки.
+  const gearText = (
+    <>
+      {gearIntro}
+      {gearItems}
     </>
   );
 
@@ -2825,6 +2989,28 @@ export default function Landing() {
               <div id={m.gear.id} className="scroll-mt-24 py-12">
                 <GuitarDesktopScene>{gearText}</GuitarDesktopScene>
               </div>
+            ) : guitarMobile ? (
+              <div id={m.gear.id} className="scroll-mt-24 py-8 sm:hidden">
+                {gearIntro}
+                <GuitarMobileShowcase />
+                <div className="space-y-3">
+                  {m.gear.items.map((it, i) => (
+                    <article key={it.name} className="rounded-2xl border border-rl-line bg-rl-panel/35 p-4">
+                      <div className="mb-3 flex items-center gap-3">
+                        <span className="rl-display text-2xl leading-none text-rl-muted/45">
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <span className={"rl-mono text-[10px] tracking-[0.14em] " + t.text}>{it.label}</span>
+                      </div>
+                      <h3 className="rl-display text-[color:var(--ink)] text-[21px] leading-tight tracking-tight mb-2">
+                        <NoBreak text={it.name} />
+                      </h3>
+                      <p className="text-[13px] text-rl-muted leading-relaxed">{it.text}</p>
+                      {it.image && <SignalChain src={it.image.src} alt={it.image.alt} />}
+                    </article>
+                  ))}
+                </div>
+              </div>
             ) : (
               <div
                 id={m.gear.id}
@@ -2832,7 +3018,7 @@ export default function Landing() {
                   "grid grid-cols-1 lg:grid-cols-2 items-center scroll-mt-24 py-12 " +
                   (guitarStage ? "gap-x-12" : "gap-12")
                 }
-                // на мобиле: строка 1 = текст, строка 2 = «посадочная зона» для гитары
+                // на планшете: строка 1 = текст, строка 2 = зона посадки для гитары
                 style={guitarStage ? { gridTemplateRows: stageRows(reduceMotion) } : undefined}
               >
                 <div
