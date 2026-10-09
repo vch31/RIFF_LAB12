@@ -8,6 +8,12 @@ import drumSide from "../assets/Drum_studio_side.png";
 import drumPng from "../assets/drum_png.png";
 
 type Mode = "guitar" | "drums";
+/**
+ * Основной светлый цвет текста (заголовки, лого, названия). Меняй только здесь.
+ * Не чисто белый, чтобы не резал глаза на тёмном фоне. Варианты: "#E6E2DA" ярче, "#CFCBC3" спокойнее, "#FFFFFF" белый.
+ */
+const INK = "#D4D0C8";
+
 type Tone = "orange" | "red";
 type SocialName = "instagram" | "telegram" | "tiktok";
 
@@ -234,7 +240,7 @@ function CTA({
   className?: string;
 }) {
   const t = TONE[tone];
-  const style = ghost ? "border border-rl-line text-rl-ink " + t.hoverBorder : t.cta;
+  const style = ghost ? "border border-rl-line text-[color:var(--ink)] " + t.hoverBorder : t.cta;
   return (
     <a
       href={href}
@@ -244,6 +250,21 @@ function CTA({
     >
       {children}
     </a>
+  );
+}
+
+/** Слова с дефисом («20W-MKII», «JS-400») не переносятся по дефису: каждое такое слово целиком уходит на новую строку */
+function NoBreak({ text }: { text: string }) {
+  const words = text.split(" ");
+  return (
+    <>
+      {words.map((w, i) => (
+        <span key={i}>
+          {w.includes("-") ? <span className="whitespace-nowrap">{w}</span> : w}
+          {i < words.length - 1 ? " " : ""}
+        </span>
+      ))}
+    </>
   );
 }
 
@@ -262,7 +283,7 @@ type PriceRowData = {
 };
 
 function PriceRow({ n, unit, label, note, price, save, highlight }: PriceRowData) {
-  const textColor = highlight ? "text-white" : "text-[#1A1A1A]";
+  const textColor = highlight ? "text-[color:var(--ink)]" : "text-[#1A1A1A]";
   const arrowColor = highlight ? "text-gray-500" : "text-[#1A1A1A]/40";
 
   return (
@@ -1302,7 +1323,7 @@ const ProgramStep = forwardRef<
           aria-controls={panelId}
           className="w-full flex items-center justify-between px-6 py-5 text-left"
         >
-          <span className={"rl-display text-xl transition-colors duration-300 " + (isOpen ? t.text : "text-rl-ink")}>
+          <span className={"rl-display text-xl transition-colors duration-300 " + (isOpen ? t.text : "text-[color:var(--ink)]")}>
             {group.title}
           </span>
           <span
@@ -2673,7 +2694,7 @@ export default function Landing() {
   const gearText = (
     <>
     <div className={"rl-mono text-xs mb-3 tracking-widest uppercase " + t.text}>Студийный сетап</div>
-    <h2 className="rl-display text-3xl sm:text-4xl mb-10">Всё готово для игры с первой минуты</h2>
+    <h2 className="rl-display text-[color:var(--ink)] text-3xl sm:text-4xl mb-10">Всё готово для игры с первой минуты</h2>
 
     <div className="space-y-8">
       {m.gear.items.map((it, i) => (
@@ -2681,7 +2702,9 @@ export default function Landing() {
           <span className="rl-display text-4xl text-rl-muted/40 w-[4.25rem] shrink-0">{String(i + 1).padStart(2, "0")}</span>
           <div>
             <div className={"rl-mono text-xs mb-1 " + t.text}>{it.label}</div>
-            <h3 className="rl-display text-xl mb-2">{it.name}</h3>
+            <h3 className="rl-display text-[color:var(--ink)] text-xl mb-2">
+              <NoBreak text={it.name} />
+            </h3>
             <p className="text-sm text-rl-muted leading-relaxed">{it.text}</p>
             {it.image && <SignalChain src={it.image.src} alt={it.image.alt} />}
           </div>
@@ -2692,12 +2715,12 @@ export default function Landing() {
   );
 
   return (
-    <main className="rl-body bg-rl-bg text-rl-ink overflow-x-clip">
+    <main className="rl-body bg-rl-bg text-[color:var(--ink)] overflow-x-clip" style={{ "--ink": INK } as CSSProperties}>
       {/* ─── Шапка ─── */}
       <header className="fixed top-0 inset-x-0 z-50 backdrop-blur bg-rl-bg/80 border-b border-rl-line h-11 md:h-16 overflow-hidden">
         <div className="max-w-6xl mx-auto px-4 md:px-8 h-full flex items-center justify-between gap-3">
           {/* Лого: на мобильных — только активный бренд, на ПК — всегда оба */}
-          <span className="rl-display text-xs sm:text-base md:text-lg tracking-tight sm:tracking-widest whitespace-nowrap flex-shrink-0">
+          <span className="rl-display text-[color:var(--ink)] text-xs sm:text-base md:text-lg tracking-tight sm:tracking-widest whitespace-nowrap flex-shrink-0">
             <span className="sm:hidden">
               {m.logoPrefix}
               <span className={t.text}>LAB12</span>
@@ -2737,17 +2760,17 @@ export default function Landing() {
             playsInline
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-b from-rl-bg/40 via-rl-bg/70 to-rl-bg" />
-        <div className="rl-ring w-[520px] h-[520px] -top-40 -right-40" style={{ borderColor: t.cssVar }} />
-        <div className="rl-ring w-[320px] h-[320px] top-20 -right-10" style={{ borderColor: t.cssVar }} />
+        <div className="absolute inset-0 bg-gradient-to-b from-rl-bg/60 via-rl-bg/80 to-rl-bg" />
+        <div className="rl-ring opacity-40 w-[520px] h-[520px] -top-40 -right-40" style={{ borderColor: t.cssVar }} />
+        <div className="rl-ring opacity-40 w-[320px] h-[320px] top-20 -right-10" style={{ borderColor: t.cssVar }} />
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <Kicker tone={m.tone}>Гродно · Студия гитары и ударных</Kicker>
-          <h1 className="rl-display text-[clamp(36px,9vw,64px)] leading-[1.05] tracking-tight font-black mb-6">
+          <h1 className="rl-display text-[color:var(--ink)] text-[clamp(36px,9vw,64px)] leading-[1.05] tracking-tight font-black mb-6 [text-shadow:0_2px_28px_rgba(0,0,0,0.65)]">
             Куда сбежать в конце дня,
             <br />
             чтобы найти себя?
           </h1>
-          <p className="text-rl-muted text-[clamp(16px,2.2vw,17px)] leading-relaxed max-w-xl mx-auto mb-6 sm:mb-8">
+          <p className="text-[color:var(--ink)] opacity-80 text-[clamp(16px,2.2vw,17px)] leading-relaxed max-w-xl mx-auto mb-6 sm:mb-8 [text-shadow:0_1px_18px_rgba(0,0,0,0.7)]">
             Приходите в студию со свежей головой, а не с тяжёлым чехлом!
             <br />
             Инструменты для наших учеников уже в студии.
@@ -2832,7 +2855,7 @@ export default function Landing() {
           <div id={mode} className="scroll-mt-24">
             <div className="mb-16">
               <Kicker tone={m.tone}>{m.programSection.kicker}</Kicker>
-              <h2 className="rl-display text-4xl mb-4">{m.programSection.title}</h2>
+              <h2 className="rl-display text-[color:var(--ink)] text-4xl mb-4">{m.programSection.title}</h2>
               <p className="text-rl-muted mb-8 max-w-2xl">{m.programSection.text}</p>
               {/* key={mode}: при смене режима аккордеон создаётся заново и открывается на первом этапе */}
               <Accordion key={mode} groups={m.program} tone={m.tone} />
@@ -2881,7 +2904,7 @@ export default function Landing() {
         <div className="max-w-5xl mx-auto relative z-10">
           <Reveal>
             <Kicker tone={m.tone}>Что вы получите</Kicker>
-            <h2 className="rl-display text-3xl sm:text-4xl md:text-5xl mb-3">Шесть причин начать</h2>
+            <h2 className="rl-display text-[color:var(--ink)] text-3xl sm:text-4xl md:text-5xl mb-3">Шесть причин начать</h2>
             <p className="text-rl-muted mb-12 max-w-xl">{m.reasonsText}</p>
           </Reveal>
 
@@ -2924,7 +2947,7 @@ export default function Landing() {
               <div style={reduceMotion ? undefined : { animation: `rl-pass-soft 0.6s ${PASS.impact}s ease-out both` }}>
                 <Kicker tone={tm.tone}>{tm.teacher.kicker}</Kicker>
               </div>
-              <p className="rl-display text-3xl md:text-4xl leading-tight mb-6">
+              <p className="rl-display text-[color:var(--ink)] text-3xl md:text-4xl leading-tight mb-6">
                 {reduceMotion ? tm.teacher.quote : <ImpactWords text={tm.teacher.quote} start={PASS.impact + 0.1} />}
               </p>
               <div
@@ -3021,7 +3044,7 @@ export default function Landing() {
           </div>
 
           <p className="text-xs text-[#1A1A1A] font-medium mt-6 text-center tracking-wide relative z-20">
-            Время одного занятия = 60 минут
+            Время одного занятия — 60 минут
           </p>
         </Reveal>
       </section>
@@ -3031,19 +3054,19 @@ export default function Landing() {
         <Reveal>
           <Kicker tone={m.tone}>Гродно, Беларусь</Kicker>
           <p className="rl-mono text-xs text-rl-muted mt-2 mb-6 tracking-wider uppercase">ул. Горького, 91</p>
-          <h2 className="rl-display text-2xl sm:text-4xl md:text-5xl mb-8">Записывайся на пробное занятие</h2>
+          <h2 className="rl-display text-[color:var(--ink)] text-2xl sm:text-4xl md:text-5xl mb-8">Записывайся на пробное занятие</h2>
           <div className="flex gap-4 justify-center flex-wrap mb-8">
-            <CTA href={igUrl} ext tone={m.tone}>
-              <span className="inline-flex items-center justify-center gap-2">
+            <CTA href={igUrl} ext tone={m.tone} className="w-full sm:w-auto text-center">
+              <span className="inline-flex items-center justify-center gap-2 whitespace-nowrap">
                 <SocialIcon name="instagram" className="w-4 h-4 shrink-0" />
-                Написать в директ · @{m.igHandle}
+                Написать в директ
               </span>
             </CTA>
             {/* Второй способ записаться: контурная кнопка, чтобы не конкурировать с основной */}
-            <CTA href={ADMIN_TG_URL} ext ghost tone={m.tone}>
-              <span className="inline-flex items-center justify-center gap-2">
+            <CTA href={ADMIN_TG_URL} ext ghost tone={m.tone} className="w-full sm:w-auto text-center">
+              <span className="inline-flex items-center justify-center gap-2 whitespace-nowrap">
                 <SocialIcon name="telegram" className="w-4 h-4 shrink-0" />
-                Написать в Telegram · @{ADMIN_TG}
+                Написать в Telegram
               </span>
             </CTA>
           </div>
