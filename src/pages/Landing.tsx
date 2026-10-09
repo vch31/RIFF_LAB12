@@ -1,6 +1,7 @@
 import { forwardRef, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { ComponentType, CSSProperties, MouseEvent as ReactMouseEvent, ReactNode, RefObject } from "react";
 import jetImg from "../assets/JET.png";
+import nuxChainImg from "../assets/nux-chain.jpg";
 import guitarTeacherImg from "../assets/teacher_riff.jpg";
 import teacherDrumImg from "../assets/drum_teacher.png";
 import drumSide from "../assets/Drum_studio_side.png";
@@ -2272,7 +2273,34 @@ function DrumSideImage() {
  * Поменять цену / текст / преподавателя = поправить одно место.
  * ───────────────────────────────────────────────────────────── */
 
-type GearItem = { label: string; name: string; text: string };
+type GearItem = { label: string; name: string; text: string; image?: { src: string; alt: string } };
+
+/** Цепочка эффектов NUX: по линии сигнала бежит светлая точка (скрыта при reduced-motion). Картинка с чёрным фоном, поэтому рамка как у экрана */
+function SignalChain({ src, alt }: { src: string; alt: string }) {
+  const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+  return (
+    <div className="relative mt-4 overflow-hidden rounded-xl border border-rl-line bg-black">
+      <style>{`@keyframes rl-signal { 0% { left: 2%; opacity: 0; } 8% { opacity: 1; } 92% { opacity: 1; } 100% { left: 98%; opacity: 0; } }`}</style>
+      <img src={src} alt={alt} loading="lazy" className="block w-full h-auto" />
+      {!reduceMotion && (
+        <span
+          aria-hidden="true"
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            top: "45%", // линия сигнала проходит на ~45% высоты картинки
+            width: 7,
+            height: 7,
+            marginTop: -3.5,
+            marginLeft: -3.5,
+            background: "#E8FFFF",
+            boxShadow: "0 0 10px 3px rgba(90, 230, 230, 0.8)",
+            animation: "rl-signal 3.6s linear infinite",
+          }}
+        />
+      )}
+    </div>
+  );
+}
 
 type ModeConfig = {
   tone: Tone;
@@ -2326,6 +2354,7 @@ const MODES: Record<Mode, ModeConfig> = {
           label: "ЗВУК И ЭФФЕКТЫ",
           name: "NUX Mighty 20W-MKII",
           text: "Мощный комбик на 20 Вт с поддержкой Bluetooth, 4 каналами и 18 встроенными эффектами. Никаких лишних проводов и долгих настроек.",
+          image: { src: nuxChainImg, alt: "Цепочка эффектов: гейт, компрессор, эффекты, усилитель, эквалайзер, модуляция, дилей, ревер" },
         },
       ],
     },
@@ -2467,62 +2496,79 @@ const SOCIAL_LINKS: Array<{ icon: SocialName; label: string; href: string; tone:
  * ───────────────────────────────────────────────────────────── */
 
 /**
- * Заголовок прайса «эквалайзер»: каждая буква — столбик уровня. Цвет студии поднимается снизу вверх, прыгает
- * (высоты пиков идут синусоидой по слову, как сигнал на осциллографе), добивает до 100% и стекает обратно в чёрный.
- * Уровень задаёт зарегистрированная переменная --lvl (@property), поэтому анимируется плавно. Перезапуск: key у родителя.
+ * Заголовок прайса «Guitar Lessons» / «Drum Lessons»: буквы стоят спокойно, по ним пробегает молния.
+ *
+ * Поверх текста лежит его копия (aria-hidden), прозрачная, с фоном-молнией, обрезанным по форме букв
+ * (background-clip: text). Молния видна ТОЛЬКО на буквах: они на миг вспыхивают светлым, на фоне секции
+ * ничего не рисуется. Пробежка идёт слева направо с коротким мерцанием, как настоящий разряд, потом пауза.
+ * Первый раз сразу после появления заголовка в экране (перезапуск: key у родителя), дальше
+ * раз в BOLT.period секунд, очень сдержанно.
+ *
+ * Анимируется только background-position и opacity.
  */
-const EQ = { dur: 1.8, step: 0.06, base: "#1A1A1A" };
+const BOLT = {
+  period: 6, // сек: пробежка + пауза до следующей
+  delay: 0.35, // сек до первой пробежки после появления в экране
+};
 
-function EqTitle({ words }: { words: string[] }) {
-  let gi = 0; // сквозной номер буквы по всем словам: волна не обрывается между строками
+// Молния + светлый шлейф за ней. viewBox 160×100: высота = высота заголовка, ширина считается сама
+const BOLT_SVG = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 100'>
+<defs>
+<linearGradient id='t' x1='0' x2='1' y1='0' y2='0'><stop offset='0' stop-color='#fff' stop-opacity='0'/><stop offset='1' stop-color='#fff' stop-opacity='0.4'/></linearGradient>
+<filter id='b' x='-50%' y='-20%' width='200%' height='140%'><feGaussianBlur stdDeviation='3'/></filter>
+</defs>
+<polygon points='0,0 128,0 92,100 0,100' fill='url(#t)'/>
+<polyline points='128,0 112,30 124,36 100,66 112,72 92,100' fill='none' stroke='#FFF6B8' stroke-width='9' stroke-linejoin='round' filter='url(#b)'/>
+<polyline points='112,30 98,40 104,48' fill='none' stroke='#FFF6B8' stroke-width='5' stroke-linejoin='round' filter='url(#b)'/>
+<polyline points='128,0 112,30 124,36 100,66 112,72 92,100' fill='none' stroke='#fff' stroke-width='2.6' stroke-linejoin='miter'/>
+<polyline points='112,30 98,40 104,48' fill='none' stroke='#fff' stroke-width='1.6' stroke-linejoin='miter'/>
+</svg>`;
+const BOLT_URL = `url("data:image/svg+xml,${encodeURIComponent(BOLT_SVG)}")`;
+
+const BOLT_KEYFRAMES = `
+@keyframes rl-bolt {
+  0% { background-position-x: -200%; opacity: 0; }
+  1% { opacity: 1; }
+  4% { opacity: 0.55; }
+  6% { opacity: 1; }
+  10% { opacity: 0.7; }
+  12% { opacity: 1; }
+  16% { background-position-x: 300%; opacity: 1; }
+  17% { opacity: 0; }
+  100% { background-position-x: 300%; opacity: 0; }
+}`;
+
+function BoltTitle({ words }: { words: string[] }) {
+  const lines = words.map((w, i) => (
+    <span key={i}>
+      {w}
+      {i < words.length - 1 && <br />}
+    </span>
+  ));
   return (
-    <>
-      <style>{`
-@property --lvl { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
-@keyframes rl-eq {
-  0% { --lvl: 0%; }
-  18% { --lvl: 100%; }
-  34% { --lvl: var(--h); }
-  50% { --lvl: 100%; }
-  64% { --lvl: var(--h); }
-  78% { --lvl: 100%; }
-  100% { --lvl: 0%; }
-}`}</style>
-      {words.map((w, wi) => (
-        <span key={wi}>
-          <span className="sr-only">{w}</span>
-          <span aria-hidden="true">
-            {Array.from(w).map((ch, i) => {
-              const n = gi++;
-              const h = Math.round(55 + 40 * Math.sin(n * 0.85 + 1));
-              const cap = "color-mix(in srgb, white 70%, var(--c))"; // яркая «макушка» столбика
-              return (
-                <span
-                  key={i}
-                  style={
-                    {
-                      display: "inline-block",
-                      padding: "0.12em 0",
-                      margin: "-0.12em 0",
-                      "--h": `${h}%`,
-                      backgroundImage: `linear-gradient(to top, var(--c) 0, var(--c) calc(var(--lvl) - 4%), ${cap} calc(var(--lvl) - 4%), ${cap} var(--lvl), ${EQ.base} var(--lvl))`,
-                      WebkitBackgroundClip: "text",
-                      backgroundClip: "text",
-                      color: "transparent",
-                      WebkitTextFillColor: "transparent",
-                      animation: `rl-eq ${EQ.dur}s cubic-bezier(0.3, 0.7, 0.3, 1) ${(n * EQ.step).toFixed(2)}s both`,
-                    } as CSSProperties
-                  }
-                >
-                  {ch}
-                </span>
-              );
-            })}
-          </span>
-          {wi < words.length - 1 && <br />}
-        </span>
-      ))}
-    </>
+    // w-fit: обёртка ровно по ширине текста, поэтому молния бежит по буквам, а не по пустым полям
+    <span className="relative block w-fit mx-auto">
+      <style>{BOLT_KEYFRAMES}</style>
+      {lines}
+      <span
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none select-none"
+        style={{
+          color: "transparent",
+          WebkitTextFillColor: "transparent",
+          backgroundImage: BOLT_URL,
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "auto 100%",
+          backgroundPositionY: "0",
+          WebkitBackgroundClip: "text",
+          backgroundClip: "text",
+          filter: "drop-shadow(0 0 8px rgba(255, 246, 184, 0.75))",
+          animation: `rl-bolt ${BOLT.period}s linear ${BOLT.delay}s infinite both`,
+        }}
+      >
+        {lines}
+      </span>
+    </span>
   );
 }
 
@@ -2536,7 +2582,7 @@ export default function Landing() {
   const [textLeaving, setTextLeaving] = useState(false);
   const textRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
-  const [eqPlay, setEqPlay] = useState(0); // +1 при каждом заезде заголовка прайса в экран
+  const [titlePlay, setTitlePlay] = useState(0); // +1 при каждом заезде заголовка прайса в экран
 
   const m = MODES[mode];
   const t = TONE[m.tone];
@@ -2566,14 +2612,14 @@ export default function Landing() {
     return () => io.disconnect();
   }, [reduceMotion]);
 
-  // заголовок прайса: эквалайзер играет при каждом возвращении в экран
+  // заголовок прайса: молния бежит по буквам при каждом возвращении в экран
   useEffect(() => {
     if (reduceMotion) return;
     const el = titleRef.current;
     if (!el) return;
     const io = new IntersectionObserver(
       ([e]) => {
-        if (e.isIntersecting) setEqPlay((n) => n + 1);
+        if (e.isIntersecting) setTitlePlay((n) => n + 1);
       },
       { threshold: 0.3 },
     );
@@ -2625,6 +2671,7 @@ export default function Landing() {
             <div className={"rl-mono text-xs mb-1 " + t.text}>{it.label}</div>
             <h3 className="rl-display text-xl mb-2">{it.name}</h3>
             <p className="text-sm text-rl-muted leading-relaxed">{it.text}</p>
+            {it.image && <SignalChain src={it.image.src} alt={it.image.alt} />}
           </div>
         </div>
       ))}
@@ -2944,7 +2991,7 @@ export default function Landing() {
                   Lessons
                 </>
               ) : (
-                <EqTitle key={`${m.pricing.word}-${eqPlay}`} words={[m.pricing.word, "Lessons"]} />
+                <BoltTitle key={`${m.pricing.word}-${titlePlay}`} words={[m.pricing.word, "Lessons"]} />
               )}
             </h2>
 
