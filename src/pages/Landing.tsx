@@ -12,7 +12,7 @@ type Mode = "guitar" | "drums";
  * Основной светлый цвет текста (заголовки, лого, названия). Меняй только здесь.
  * Не чисто белый, чтобы не резал глаза на тёмном фоне. Варианты: "#E6E2DA" ярче, "#CFCBC3" спокойнее, "#FFFFFF" белый.
  */
-const INK = "#D4D0C8";
+const INK = "#CFCBC3";
 
 type Tone = "orange" | "red";
 type SocialName = "instagram" | "telegram" | "tiktok";
@@ -34,7 +34,6 @@ type ToneKey =
   | "hoverBorder"
   | "shadowSoft"
   | "cta"
-  | "floatingCta"
   | "digit"
   | "groupHoverDigit"
   | "stepOpenCard"
@@ -52,7 +51,6 @@ const TONE: Record<Tone, Record<ToneKey, string>> = {
     hoverBorder: "hover:border-rl-orange",
     shadowSoft: "shadow-rl-orange/20",
     cta: "bg-rl-orange text-rl-bg hover:brightness-110",
-    floatingCta: "bg-rl-orange text-rl-bg shadow-rl-orange/20 border border-rl-orange/50",
     digit: "text-rl-orange/15",
     groupHoverDigit: "group-hover:text-rl-orange/15",
     stepOpenCard: "border-rl-orange/50 shadow-[0_4px_20px_rgba(255,122,0,0.08)]",
@@ -70,7 +68,6 @@ const TONE: Record<Tone, Record<ToneKey, string>> = {
     hoverBorder: "hover:border-rl-red",
     shadowSoft: "shadow-rl-red/20",
     cta: "bg-rl-red text-rl-bg hover:brightness-110",
-    floatingCta: "bg-rl-red text-rl-bg shadow-rl-red/20 border border-rl-red/50",
     digit: "text-rl-red/15",
     groupHoverDigit: "group-hover:text-rl-red/15",
     stepOpenCard: "border-rl-red/50 shadow-[0_4px_20px_rgba(230,57,70,0.08)]",
@@ -846,26 +843,6 @@ function TeacherPass({
   );
 }
 
-/* ─────────────────────────────────────────────────────────────
- * БАРАБАН В ПРАЙСЕ
- * ───────────────────────────────────────────────────────────── */
-
-/**
- * Малый барабан в секции PRICING (режим «барабаны»). Без звука.
- *
- *  1. Падение. Барабан «падает с камеры»: летит сверху, уменьшаясь, бьётся о шов секции,
- *     подпрыгивает и успокаивается. В момент удара: вспышка, три ударные волны, россыпь осколков.
- *     Проигрывается КАЖДЫЙ раз: при смене студии на барабаны и когда вернулась к блоку после скролла.
- *  2. Пульс. Дальше он «дышит» в ритм 4/4: лёгкий толчок на каждую долю, акцент на первой
- *     плюс тонкое кольцо раз в такт.
- *  3. Удар по клику. Тап или клик по барабану: он вдавливается от точки касания, подпрыгивает,
- *     по нему расходится кольцо и разлетаются осколки. Работает и с клавиатуры (Enter / Space).
- *
- * Слои transform независимы (падение → удар → пульс → картинка), поэтому не мешают друг другу.
- * Волны красные на красном фоне не видны, поэтому белые и тёмные. Тень (drop-shadow) стоит на самой
- * картинке: так браузер кэширует её и не пересчитывает каждый кадр. При prefers-reduced-motion
- * показывается обычная картинка.
- */
 const DRUM = {
   circle: 0.86, // доля ширины картинки, которую занимает корпус (кликабельная зона и волны). Подгони, если мимо
   dropFrom: 520, // px, с какой высоты начинает падать
@@ -2607,7 +2584,6 @@ function BoltTitle({ words }: { words: string[] }) {
 
 export default function Landing() {
   const [mode, setMode] = useState<Mode>("guitar");
-  const [showCta, setShowCta] = useState(false);
   // текст преподавателя: показывает то, что видит пропуск, и перезапускается вместе с ним
   const [textMode, setTextMode] = useState<Mode>("guitar");
   const [textPlay, setTextPlay] = useState(0);
@@ -2663,22 +2639,6 @@ export default function Landing() {
   const isLg = useMediaQuery("(min-width: 1024px)");
   const guitarStage = !isLg && mode === "guitar"; // мобила и планшет: гитара за текстом, потом под ним
   const guitarScene = isLg && mode === "guitar"; // десктоп: закреплённая сцена, слева текст, справа гитара
-
-  useEffect(() => {
-    const onScroll = () => {
-      const pastHero = window.scrollY > window.innerHeight * 0.9;
-      const teamEl = document.getElementById("team");
-      const reachedTeam = teamEl ? teamEl.getBoundingClientRect().top < window.innerHeight * 0.6 : false;
-      setShowCta(pastHero && !reachedTeam);
-    };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, []);
 
   const NAV: Array<[string, string]> = [
     ["#programs", "Программа"],
@@ -3094,25 +3054,6 @@ export default function Landing() {
           </div>
         </Reveal>
       </section>
-
-      {/* ─── Плавающая кнопка только на мобильных ─── */}
-      <div
-        className={
-          "fixed bottom-6 inset-x-0 z-50 flex justify-center px-6 md:hidden transition-all duration-500 ease-out motion-reduce:transition-none " +
-          (showCta ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8 pointer-events-none")
-        }
-      >
-        <a
-          href="#contact"
-          className={
-            "w-full max-w-[320px] flex items-center justify-center py-4 px-6 rl-mono text-xs font-bold tracking-widest uppercase rounded-full " +
-            "shadow-2xl transition-all duration-300 active:scale-95 " +
-            t.floatingCta
-          }
-        >
-          Записаться на пробное
-        </a>
-      </div>
 
       <footer className="border-t border-rl-line py-6 md:py-4 px-6">
         <div className="max-w-6xl mx-auto flex justify-center items-center gap-2 md:gap-4">
